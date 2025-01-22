@@ -10,7 +10,7 @@ namespace Main {
     int renderDistance = 4;
     int renderDistance_z = 3;
 
-    Memory::ReservedGraphics@ _debugRD;
+    //Memory::ReservedGraphics@ _debugRD;
 
     // dynamically changed based on fps
     int toGenerateBlocks = MAX_GENERATED_BLOCKS_AT_ONCE;
@@ -41,10 +41,10 @@ namespace Main {
         ClearTextMessages();
         DisplayTextToPlayer(GetLocalPlayer(), 0, 0, dbg);
 
-        if(_debugRD !is null) {
+        // if(_debugRD !is null) {
 
-            __debug("debug rd: " + GetSpecialEffectX(_debugRD.eff) + " " + GetSpecialEffectY(_debugRD.eff) + " " + GetSpecialEffectZ(_debugRD.eff));
-        }
+        //     __debug("debug rd: " + GetSpecialEffectX(_debugRD.eff) + " " + GetSpecialEffectY(_debugRD.eff) + " " + GetSpecialEffectZ(_debugRD.eff));
+        // }
 
         //__debug("Requested To Build Chunks: " + overworld.requestedToBuildChunks.length() + "\nProcessing Generating Chunks: " + World::Generator::chunksBeingGenerated.length() + "\nProcessing Building Chunks: " + World::Builder::chunksBeingBuilt.length());
     }
@@ -59,31 +59,48 @@ namespace Main {
         EditBlackBorders(0, 0);
     }
 
-    class ReferencedClass {
-        int doesntmatter;
-    }
-    class ClassInArray {
-        weakref<ReferencedClass> c;
-    }
-    class ClassWithBigArray {
-        ReferencedClass@ rc;
-        array<ClassInArray> bigArray(16*16*16*10);
-    }
+    // class ReferencedClass {
+    //     int doesntmatter;
+    // }
+    // class ClassInArray {
+    //     weakref<ReferencedClass> c;
+    // }
+    // class ClassWithBigArray {
+    //     //ReferencedClass@ rc;
+    //     //array<ClassInArray> bigArray(16*16*16*10);
+    //     int haha=0;
 
-    void DoSomething(ClassWithBigArray@ cl) {
-        cl.bigArray[0].c.get().doesntmatter = 1;
-    }
+    //     ClassWithBigArray() {
+    //         abc++;
+    //     }
+    // }
 
-    void Upd() {
-        for(int i = 0; i < 10000; i++) {
-            ClassWithBigArray c = ClassWithBigArray();
-            DoSomething(@c);
-        }
-    }
+    // void DoSomething(ClassWithBigArray@ cl) {
+    //     //cl.bigArray[34].c.get().doesntmatter = 1;
+    // }
+
+    // array<int> carr(4000000);
+    // array<int> carr2(400000);
+    // array<int> carr3(400000);
+    // int64 last = 0;
+    // int64 abc = 0;
+    // void Upd() {
+    //     // for(int i = last; i < last + 100000; i++) {
+    //     //     carr[i] = ClassWithBigArray();
+    //     //     //DoSomething(@c);
+    //     //     //abc += c.bigArray.length();
+    //     // }
+    //     // last += 100000;
+    //     // __debug(abc + "");
+    // }
+
 
     void PostInit() {
-        //TimerStart(CreateTimer(), 0.5f, true, @Upd);
-        //return;
+        // effect a;
+        // effect b;
+        // if(a == b) {
+        //     print("a==b");
+        // } else print("a!=b");
 
         HideWarcraftInterface();
         Multiplayer::Init();

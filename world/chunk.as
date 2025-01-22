@@ -59,15 +59,17 @@ namespace World {
         ChunkGenerationState generationState;
 
         WorldInstance@ world;
-        array<array<array<Block>>> blocks(CHUNK_SIZE, array<array<Block>>(CHUNK_SIZE, array<Block>(CHUNK_SIZE)));
+        array<array<array<BlockID>>> blocks(CHUNK_SIZE, array<array<BlockID>>(CHUNK_SIZE, array<BlockID>(CHUNK_SIZE)));
+        array<array<array<effect>>> graphics(CHUNK_SIZE, array<array<effect>>(CHUNK_SIZE, array<effect>(CHUNK_SIZE)));
+        array<array<array<uint>>> graphics_id(CHUNK_SIZE, array<array<uint>>(CHUNK_SIZE, array<uint>(CHUNK_SIZE, -1)));
 
-        Chunk() {_debug_chunks_count++; __debug(_debug_chunks_count+" blocks: " + _debug_blocks_count);}
+        Chunk() {}//_debug_chunks_count++; __debug(_debug_chunks_count+" blocks: " + _debug_blocks_count);}
         Chunk(const ChunkPos &in pos, const WorldInstance@ &in world) {
             position = pos;
             this.world = world;
             generationState = ChunkGenerationState::UNLOADED;
-            _debug_chunks_count++;
-            __debug(_debug_chunks_count+" blocks: " + _debug_blocks_count);
+            //_debug_chunks_count++;
+            //__debug(_debug_chunks_count+" blocks: " + _debug_blocks_count);
         }
 
         void UnloadGraphics() {
@@ -76,9 +78,11 @@ namespace World {
             for(uint i = 0; i < CHUNK_SIZE; i++) {
                 for(uint j = 0; j < CHUNK_SIZE; j++) {
                     for(uint k = 0; k < CHUNK_SIZE; k++) {
-                        if(blocks[i][j][k].graphics !is null) {
-                            Memory::FreeReservedGraphics(@blocks[i][j][k].graphics);
-                            @blocks[i][j][k].graphics = null;
+                        if(graphics_id[i][j][k] != -1) {
+                            //if(i == 1 && j == 1 && k == 0) __debug("chunk " + position + " prefree " + graphics_id[i][j][k]);
+                            Memory::FreeReservedGraphics(graphics[i][j][k], graphics_id[i][j][k]);
+                            graphics[i][j][k] = nil;
+                            graphics_id[i][j][k] = -1;
                         }
                     }
                 }
@@ -94,20 +98,20 @@ namespace World {
         }
         
         // bounds not checked
-        Vector3I AbsolutePositionToChunkBlockPos(Vector3 &in pos) {
+        BlockPos AbsolutePositionToChunkBlockPos(Vector3 &in pos) {
             Vector3 abspos = Vector3(position.x * CHUNK_SIZE * BLOCK_SIZE, position.y * CHUNK_SIZE * BLOCK_SIZE, position.z * CHUNK_SIZE * BLOCK_SIZE);
             Vector3 p = (pos - abspos) * (1.0f/BLOCK_SIZE);
 
             //__debug("apcbp: pos: " + pos + "; abspos: " + abspos + "; p: " + p);
-            return Vector3I(int(p.x), int(p.y), int(p.z));
+            return BlockPos(@this, int(p.x), int(p.y), int(p.z));
         }
 
         // returns blocks positions
         array<Vector3I>@ GetAABBBlocks(Collision::AABB &in aabb) {
             array<Vector3I> b;
 
-            Vector3I lbd = AbsolutePositionToChunkBlockPos(Vector3(aabb.minX - 64, aabb.minY - 64, aabb.minZ - 64));
-            Vector3I rfu = AbsolutePositionToChunkBlockPos(Vector3(aabb.maxX + 64, aabb.maxY + 64, aabb.maxZ + 64));
+            BlockPos lbd = AbsolutePositionToChunkBlockPos(Vector3(aabb.minX - 64, aabb.minY - 64, aabb.minZ - 64));
+            BlockPos rfu = AbsolutePositionToChunkBlockPos(Vector3(aabb.maxX + 64, aabb.maxY + 64, aabb.maxZ + 64));
             //if(position.x == 3 && position.y == 3 && position.z == 3) __debug("lbd " + lbd + "; rfu " + rfu);
 
             for(int i = lbd.x; i <= rfu.x; i++) {
@@ -124,10 +128,10 @@ namespace World {
             return @b;
         }
 
-        void SetBlock(Vector3I blockPos, BlockID id) {
-            //__debug_section_start("SetBlock " + Vector3(position.x*CHUNK_SIZE+blockPos.x,position.y*CHUNK_SIZE+blockPos.y,position.z*CHUNK_SIZE+blockPos.z));
-            blocks[blockPos.x][blockPos.y][blockPos.z].id = id;
-            Builder::UpdateChunkBlockGraphics(@this, blockPos, true);
+        void SetBlock(BlockPos blockPos, BlockID id) {
+            //__debug("SetBlock " + blockPos.chunk.position + ": " + blockPos.x + " " + blockPos.y + " " + blockPos.z);
+            blocks[blockPos.x][blockPos.y][blockPos.z] = id;
+            Builder::UpdateChunkBlockGraphics(blockPos, true);
             //__debug_section_end();
         }
 
@@ -136,7 +140,7 @@ namespace World {
             for(int i = 0; i < CHUNK_SIZE; i++) {
                 for(int j = 0; j < CHUNK_SIZE; j++) {
                     for(int k = 0; k < CHUNK_SIZE; k++) {
-                        s += int(blocks[i][j][k].id) + "|";
+                        s += int(blocks[i][j][k]) + "|";
                     }
                 }
             }

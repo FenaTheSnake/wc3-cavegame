@@ -147,10 +147,11 @@ namespace FPP {
                                             GetCameraForward(),
                                             BLOCK_SIZE * 5,
                                             hit)) {
-                    World::Chunk@ chunk = @world.GetChunkByBlockPos(hit.position);
-                    chunk.SetBlock(Vector3I(hit.position.x - chunk.position.x * CHUNK_SIZE, 
-                                            hit.position.y - chunk.position.y * CHUNK_SIZE, 
-                                            hit.position.z - chunk.position.z * CHUNK_SIZE), World::BlockID::AIR);
+                    World::Chunk@ chunk = @hit.position.chunk;
+                    chunk.SetBlock(World::BlockPos(@chunk,
+                                            hit.position.x,// - chunk.position.x * CHUNK_SIZE, 
+                                            hit.position.y,// - chunk.position.y * CHUNK_SIZE, 
+                                            hit.position.z), World::BlockID::AIR);// - chunk.position.z * CHUNK_SIZE), World::BlockID::AIR);
                     blockBreakCooldown = 10;
                 }
             }
@@ -162,11 +163,11 @@ namespace FPP {
                                             BLOCK_SIZE * 5,
                                             hit)) {
                     //__debug("pos " + hit.position + " face " + hit.face);
-                    Vector3I placementPosition = hit.position + hit.face;
-                    World::Chunk@ chunk = @world.GetChunkByBlockPos(placementPosition);
-                    chunk.SetBlock(Vector3I(placementPosition.x - chunk.position.x * CHUNK_SIZE, 
-                                            placementPosition.y - chunk.position.y * CHUNK_SIZE, 
-                                            placementPosition.z - chunk.position.z * CHUNK_SIZE), World::BlockID::GRASS);
+                    Vector3I placementPosition = Vector3I(  hit.position.chunk.position.x*CHUNK_SIZE + hit.position.x, 
+                                                            hit.position.chunk.position.y*CHUNK_SIZE + hit.position.y, 
+                                                            hit.position.chunk.position.z*CHUNK_SIZE + hit.position.z) + hit.face;
+                    World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(placementPosition.x, placementPosition.y, placementPosition.z));
+                    bpos.chunk.SetBlock(bpos, World::BlockID::GRASS);// - chunk.position.z * CHUNK_SIZE), World::BlockID::GRASS);
                     blockBreakCooldown = 10;
                 }
             }

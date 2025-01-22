@@ -3,13 +3,13 @@
 namespace Collision {
 
     class BlockRaycastInfo {
-        World::Block@ block;
-        Vector3I position;
+        World::BlockID block;
+        World::BlockPos position;
         Vector3 face;
 
         BlockRaycastInfo() {}
-        BlockRaycastInfo(World::Block@ &in b, Vector3I &in p, Vector3 &in f) {
-            @block = @b;
+        BlockRaycastInfo(World::BlockID &in b, World::BlockPos &in p, Vector3 &in f) {
+            block = b;
             position = p;
             face = f;
         }
@@ -44,9 +44,11 @@ namespace Collision {
 
         int maxIter = 100;
         while(maxIter-- > 0) {
-            World::Block@ b = @world.GetBlockByBlockPos(Vector3I(x, y, z));
-            if(b !is null && b.id != World::BlockID::AIR) {
-                info = BlockRaycastInfo(b, Vector3I(x, y, z), face);
+            World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(x, y, z));
+            World::BlockID b = bpos.chunk.blocks[bpos.x][bpos.y][bpos.z];
+            if(b != World::BlockID::AIR) {
+                //BlockRaycastInfo test = BlockRaycastInfo(b, Vector3I(), face);
+                info = BlockRaycastInfo(b, bpos, face);
                 return true;
             }
 
