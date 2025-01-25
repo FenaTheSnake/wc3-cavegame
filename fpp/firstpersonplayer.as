@@ -14,6 +14,10 @@ namespace FPP {
 
         Vector3 motion;
 
+        float stepHeight = PLAYER_STEPHEIGHT;
+        bool isSneaking;
+        bool isSprinting;
+
         bool onGround;
         bool isCollidedHorizontally;
         bool isCollidedVertically;
@@ -21,6 +25,8 @@ namespace FPP {
 
         bool waitingForChunksToLoad;    // movement is disabled while potentional collidable chunks are loading
 
+        float eyePosition = PLAYER_DEFAULT_EYES_POSITION;
+        float fov = PLAYER_DEFAULT_FOV;
         Vector2 targetFacing;
         Vector2 currentFacing;
         float facingSmoothFactor = 22.0f;
@@ -74,8 +80,8 @@ namespace FPP {
             Move(motion);
             if(waitingForChunksToLoad) return;
 
-            motion.x = motion.x * 0.8f;
-            motion.y = motion.y * 0.8f;
+            motion.x = motion.x * 0.85f;
+            motion.y = motion.y * 0.85f;
             //motion.z = motion.z * 0.8f;
 
             Vector3 oldPos = position;
@@ -99,7 +105,7 @@ namespace FPP {
 
         void UpdateWC3Camera() {
             SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, 0.0f, cameraTime);
-            SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, 100.0f, cameraTime);
+            SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, fov, cameraTime);
             SetCameraField(CAMERA_FIELD_FARZ, 7000.0f, cameraTime);
             SetCameraField(CAMERA_FIELD_NEARZ, 16.0f, cameraTime);
 
@@ -109,7 +115,7 @@ namespace FPP {
 
             //SetCameraPosition(newX, newY);
             PanCameraToTimed(newX, newY, cameraTime);
-            SetCameraZ(position.z + (PLAYER_HEIGHT / 2) + 100*Sin(Deg2Rad(currentFacing.y)));
+            SetCameraZ(position.z + eyePosition + 100*Sin(Deg2Rad(currentFacing.y)));
             //SetCameraField(CAMERA_FIELD_ZOFFSET, position.z + 90.0f + Sin(Deg2Rad(currentFacing.y)), 0.0);
             SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, cameraTime);
             SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, currentFacing.y, cameraTime);
@@ -132,8 +138,8 @@ namespace FPP {
                     currentFacing.x = targetFacing.x;
                     //SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, 0);
                 }
-                if(targetFacing.y > 85.0f) targetFacing.y = 85.0f;
-                if(targetFacing.y < -85.0f) targetFacing.y = -85.0f;
+                if(targetFacing.y > 89.0f) targetFacing.y = 89.0f;
+                if(targetFacing.y < -89.0f) targetFacing.y = -89.0f;
 
 
                 SetMouseScreenRelativePosition(SCREEN_CENTER.x, SCREEN_CENTER.y);
@@ -143,7 +149,7 @@ namespace FPP {
             if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT) && blockBreakCooldown == 0) {
                 Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
                 if(Collision::RaycastBlock(  @world, 
-                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + (PLAYER_HEIGHT / 2)),
+                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + PLAYER_DEFAULT_EYES_POSITION),
                                             GetCameraForward(),
                                             BLOCK_SIZE * 5,
                                             hit)) {
@@ -158,7 +164,7 @@ namespace FPP {
             if(IsKeyPressed(OSKEY_E) && blockBreakCooldown == 0) {
                 Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
                 if(Collision::RaycastBlock(  @world, 
-                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + (PLAYER_HEIGHT / 2)),
+                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + PLAYER_DEFAULT_EYES_POSITION),
                                             GetCameraForward(),
                                             BLOCK_SIZE * 5,
                                             hit)) {
@@ -180,6 +186,10 @@ namespace FPP {
             if(IsKeyPressed(OSKEY_D)) x += 1.0f;
             if(IsKeyPressed(OSKEY_A)) x -= 1.0f;
 
+            if(x == 0.0f && y == 0.0f) {
+                isSprinting = false;
+            }
+
             Vector3 fwd = GetCameraForward();
             Vector3 right = GetCameraRight();
             fwd.z = 0; right.z = 0;
@@ -188,8 +198,24 @@ namespace FPP {
             movement *= speed;
 
             if(IsKeyPressed(OSKEY_SPACE) && onGround) {
-                movement.z = 8.0f;
+                movement.z = PLAYER_JUMP_STRENGTH;
             }
+            if(IsKeyPressed(OSKEY_SHIFT)) {
+                isSneaking = true;
+                isSprinting = false;
+            } else {
+                isSneaking = false;
+            }
+
+            if(IsKeyPressed(OSKEY_CONTROL)) {
+                isSprinting = true;
+                isSneaking = false;
+            }
+
+            speed = (isSneaking) ? (PLAYER_SNEAKING_SPEED) : (isSprinting ? PLAYER_SPRINTING_SPEED : PLAYER_DEFAULT_SPEED);
+            fov = isSprinting ? PLAYER_SPRINTING_FOV : PLAYER_DEFAULT_FOV;
+            eyePosition = isSneaking ? PLAYER_SNEAKING_EYES_POSITION : PLAYER_DEFAULT_EYES_POSITION;
+
             // if(IsKeyPressed(OSKEY_SPACE)) movement.z = 1.0f * speed;
             // if(IsKeyPressed(OSKEY_SHIFT)) movement.z = -1.0f * speed;
             
@@ -206,7 +232,7 @@ namespace FPP {
             }
             if(!waitingForChunksToLoad) {
                 if(motion.z > -32.0f) {
-                    motion.z -= 9.81f * 1.0f/60.0f;
+                    motion.z -= GRAVITY * 1.0f/60.0f;
                 }
             }
             UpdateMovement();
@@ -239,6 +265,48 @@ namespace FPP {
             Vector3 pmax = Vector3(absolute_position.x + PLAYER_SIZE / 2, absolute_position.y + PLAYER_SIZE / 2, absolute_position.z + PLAYER_HEIGHT / 2);
             Collision::AABB paabb = Collision::AABB(pmin, pmax);
 
+            if(isSneaking && onGround) {
+                while(move.x != 0.0f) {
+                    float movex = (move.x >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                    array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(move.x + movex, 0.0f, -stepHeight));
+                    // __debug("clen " + c.length());
+                    // for(int i = 0; i < c.length(); i++) {
+                    //     __debug("aabb " + c[i]);
+                    // }
+                    if(c.length() != 0) break;
+
+                    if(move.x < PLAYER_BLOCK_SNAP_QUALITY && move.x >= -PLAYER_BLOCK_SNAP_QUALITY) move.x = 0.0f;
+                    else if(move.x > 0.0f) move.x -= PLAYER_BLOCK_SNAP_QUALITY;
+                    else move.x += PLAYER_BLOCK_SNAP_QUALITY;
+                    //__debug("move.x " + move.x + " clen " + c.length());
+                }
+                while(move.y != 0.0f) {
+                    float movey = (move.y >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                    array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(0.0f, move.y + movey, -stepHeight));
+                    if(c.length() != 0) break;
+
+                    if(move.y < PLAYER_BLOCK_SNAP_QUALITY && move.y >= -PLAYER_BLOCK_SNAP_QUALITY) move.y = 0.0f;
+                    else if(move.y > 0.0f) move.y -= PLAYER_BLOCK_SNAP_QUALITY;
+                    else move.y += PLAYER_BLOCK_SNAP_QUALITY;
+                    //__debug("move.y " + move.y + " clen " + c.length());
+                }
+                while(move.x != 0.0f && move.y != 0.0f) {
+                    float movex = (move.x >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                    float movey = (move.y >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                    array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(move.x + movex, move.y + movey, -stepHeight));
+                    if(c.length() != 0) break;
+
+                    if(move.x < PLAYER_BLOCK_SNAP_QUALITY && move.x >= -PLAYER_BLOCK_SNAP_QUALITY) move.x = 0.0f;
+                    else if(move.x > 0.0f) move.x -= PLAYER_BLOCK_SNAP_QUALITY;
+                    else move.x += PLAYER_BLOCK_SNAP_QUALITY;
+
+                    if(move.y < PLAYER_BLOCK_SNAP_QUALITY && move.y >= -PLAYER_BLOCK_SNAP_QUALITY) move.y = 0.0f;
+                    else if(move.y > 0.0f) move.y -= PLAYER_BLOCK_SNAP_QUALITY;
+                    else move.y += PLAYER_BLOCK_SNAP_QUALITY;
+                    //__debug("move.x " + move.x + "move.y " + move.y + " clen " + c.length());
+                }
+            } //else __debug("inair");
+
             Collision::AABB expanded = paabb.expand(move.x, move.y, move.z);
             array<Collision::AABB> collisions = world.GetAABBCollisionBoxes(expanded);
             if(!world.lastAABBCollisionBoxesGetWasSuccessful) {
@@ -247,6 +315,7 @@ namespace FPP {
             } else waitingForChunksToLoad = false;
 
             Vector3 oldMove = move;
+
 
             if(!IsZero(move.y)) {
                 float r = move.y;
@@ -277,7 +346,7 @@ namespace FPP {
             isCollidedHorizontally = move.x != oldMove.x || move.y != oldMove.y;
             isCollidedVertically = move.z != oldMove.z;
             isCollided = isCollidedHorizontally || isCollidedVertically;
-            onGround = isCollidedVertically && move.y < 0.0f;
+            onGround = isCollidedVertically && move.z < EPSILON;
 
             if(move.x != oldMove.x) motion.x = 0.0f;
             if(move.y != oldMove.y) motion.y = 0.0f;

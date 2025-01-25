@@ -51,10 +51,10 @@ namespace World {
 
     int _debug_chunks_count = 0;
 
-    // The World is consists of box-shaped block chunks (size is defined by CHUNK_SIZE in constants.as).
+    // The World is consists of box-shaped block chunks (size is defined as CHUNK_SIZE in constants.as).
     // World's (0,0,0) block is (0,0,0) block of (0,0,0) chunk.
     class Chunk {
-        ChunkPos position; // pos in world. Ex. (0,0,1) = this chunk starts at (0,0,CHUNK_SIZE)
+        ChunkPos position; // pos in world. Ex. (0,0,1) = this chunk's (0,0,0) block is at (0,0,CHUNK_SIZE) in the world
         ChunkPos on_map_position;   // position on wc3 map (is bound to map limits)
         ChunkGenerationState generationState;
 
@@ -110,8 +110,8 @@ namespace World {
         array<Vector3I>@ GetAABBBlocks(Collision::AABB &in aabb) {
             array<Vector3I> b;
 
-            BlockPos lbd = AbsolutePositionToChunkBlockPos(Vector3(aabb.minX - 64, aabb.minY - 64, aabb.minZ - 64));
-            BlockPos rfu = AbsolutePositionToChunkBlockPos(Vector3(aabb.maxX + 64, aabb.maxY + 64, aabb.maxZ + 64));
+            BlockPos lbd = AbsolutePositionToChunkBlockPos(Vector3(aabb.minX, aabb.minY, aabb.minZ));
+            BlockPos rfu = AbsolutePositionToChunkBlockPos(Vector3(aabb.maxX, aabb.maxY, aabb.maxZ));
             //if(position.x == 3 && position.y == 3 && position.z == 3) __debug("lbd " + lbd + "; rfu " + rfu);
 
             for(int i = lbd.x; i <= rfu.x; i++) {
@@ -140,7 +140,7 @@ namespace World {
             for(int i = 0; i < CHUNK_SIZE; i++) {
                 for(int j = 0; j < CHUNK_SIZE; j++) {
                     for(int k = 0; k < CHUNK_SIZE; k++) {
-                        s += int(blocks[i][j][k]) + "|";
+                        s += UInt2StringLengthOf3(blocks[i][j][k]); // add block id with fixed length of 3 with leading zeroes (ex. 1 -> 001)
                     }
                 }
             }
