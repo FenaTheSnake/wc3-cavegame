@@ -57,25 +57,30 @@ namespace World {
                 //__debug_section_end();
                 return false;
             }
-
             Chunk@ chunk = cast<Chunk@>(loadedChunks[position]);
-            chunk.UnloadGraphics();
-            //Memory::chunkPool.FreeChunk(chunk);
-            chunk.generationState = ChunkGenerationState::GENERATED;
+            if(chunk.generationState >= ChunkGenerationState::GENERATED) {
+                chunk.UnloadGraphics();
+                //Memory::chunkPool.FreeChunk(chunk);
+                chunk.generationState = ChunkGenerationState::GENERATED;
 
-            int c = builtChunks.findByRef(cast<Chunk@>(loadedChunks[position]));
-            if(c < 0) {
-                //__debug("chunk is loaded but not built!");
+                int c = builtChunks.findByRef(cast<Chunk@>(loadedChunks[position]));
+                if(c < 0) {
+                    //__debug("chunk is loaded but not built!");
+                    //__debug_section_end();
+                    return false;
+                }
+
+                builtChunks.removeAt(c);
+                //loadedChunks[position] = null;
+                //loadedChunks.delete(position);
+                //__debug("unloaded successfully!");
                 //__debug_section_end();
-                return false;
+                return true;
+            } else {
+                chunk.generationState = ChunkGenerationState::UNLOADED;
+                loadedChunks.delete(position);
+                return true;
             }
-
-            builtChunks.removeAt(c);
-            //loadedChunks[position] = null;
-            //loadedChunks.delete(position);
-            //__debug("unloaded successfully!");
-            //__debug_section_end();
-            return true;
         }
 
         // unloads chunks and builds new according to provided position
@@ -85,7 +90,7 @@ namespace World {
             //int visibleChunksCount = Pow((1 + (Main::renderDistance - 1) * 2), 3);
             //array<Chunk@> visibleChunks(visibleChunksCount);
 
-            __debug_section_start("UpdateBuiltChunks");
+            //__debug_section_start("UpdateBuiltChunks");
             int _debug_unloaded = 0;
             int _debug_loaded = 0;
 
@@ -98,7 +103,7 @@ namespace World {
                         _debug_unloaded ++;
                         i--;
                     }
-                   }
+                }
             }
 
             for(int i = center.x - (Main::renderDistance - 1); i <= center.x + (Main::renderDistance - 1); i++) {
@@ -114,7 +119,7 @@ namespace World {
             //__debug("Requested / Unloaded chunks: " + _debug_loaded + " / " + _debug_unloaded);
             //__debug("ReservedGraphics usage: " + Memory::usedGraphics.length() + "/" + RESERVE_GRAPHICS_COUNT);
             //__debug("ChunkPool usage: " + Memory::chunkPool.usedChunks.length() + "/" + CHUNK_POOL_MAX_SIZE);
-            __debug_section_end();
+            //__debug_section_end();
         }
 
         void ProcessRequestedToBuildChunks() {
@@ -130,6 +135,19 @@ namespace World {
                     i--; continue;
                 }
             }
+        }
+
+        // unloads all chunks that are generated but not built
+        void UnloadUnrelevantChunksIfNecessary() {
+            return;
+            // if(Memory::chunkPool.usedChunks.length() < CHUNK_POOL_SOFT_LIMIT) return;
+            // array<string>@ keys = loadedChunks.getKeys();
+            // for(int i = 0; i < keys.length(); i++) {
+            //     Chunk@ c = cast<Chunk@>(loadedChunks[keys]);
+            //     if(c.generationState == ChunkGenerationState::GENERATED) {
+
+            //     }
+            // }
         }
 
         // true = block is not visible
@@ -299,7 +317,6 @@ namespace World {
                     }
                 }
             }
-
             return boxes;
         }
 
@@ -307,9 +324,21 @@ namespace World {
         // used when player loops back to reposition already generated chunks and do not generate them again
         void UpdateBuiltChunksPositions() {
             for(uint i = 0; i < builtChunks.length(); i++) {
+                ChunkPos prev = builtChunks[i].on_map_position;
                 builtChunks[i].on_map_position = World::ChunkPosToWC3Position(builtChunks[i].position);
-                Builder::RepositionChunk(@builtChunks[i]);
+                if(prev != builtChunks[i].on_map_position) {
+                    Builder::RepositionChunk(@builtChunks[i]);
+                }
             }
+
+            for(uint i = 0; i < Builder::chunksBeingBuilt.length(); i++) {
+                ChunkPos prev = Builder::chunksBeingBuilt[i].chunk.on_map_position;
+                Builder::chunksBeingBuilt[i].chunk.on_map_position = World::ChunkPosToWC3Position(Builder::chunksBeingBuilt[i].chunk.position);
+                if(prev != Builder::chunksBeingBuilt[i].chunk.on_map_position) {
+                    Builder::RepositionChunk(@Builder::chunksBeingBuilt[i].chunk);
+                }
+            }
+
         }
     }
 
