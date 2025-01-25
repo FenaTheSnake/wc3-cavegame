@@ -30,8 +30,47 @@ namespace Memory {
         }
     }
 
+    int AppendUsedGraphics(effect e) {
+        int i = lastUsedGraphics;
+        int searchEnd = (lastUsedGraphics == 0) ? (RESERVE_GRAPHICS_COUNT - 1) : (lastUsedGraphics - 1);
+        while(i != searchEnd) {
+            if(usedGraphics[i] != nil) {
+                if(++i == RESERVE_GRAPHICS_COUNT) i = 0;
+                continue;
+            }
+            usedGraphics[i] = e;
+            lastUsedGraphics = i;
+            return i;
+        }
+
+        return 0;
+    }
+
     effect GetReservedGraphics(uint &out id) {
-        
+        if(lastUsedGraphics >= RESERVE_GRAPHICS_COUNT) {
+            print("OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
+            DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
+            return nil;
+        }
+
+        int i = lastFreeGraphics;
+        int searchEnd = (lastFreeGraphics == 0) ? (RESERVE_GRAPHICS_COUNT - 1) : (lastFreeGraphics - 1);
+        while(i != searchEnd) {
+            if(reservedGraphics[i] == nil) {
+                if(++i == RESERVE_GRAPHICS_COUNT) i = 0;
+                continue;
+            }
+            //usedGraphics[lastUsedGraphics] = reservedGraphics[i];
+            //id = lastUsedGraphics - 1;
+            //lastUsedGraphics += 1;
+            id = AppendUsedGraphics(reservedGraphics[i]);
+            reservedGraphics[i] = nil;
+            lastFreeGraphics = (lastFreeGraphics == RESERVE_GRAPHICS_COUNT - 1) ? (0) : (lastFreeGraphics + 1);
+
+            return usedGraphics[id];
+        }
+        return nil;
+    }
 
 
     //     if(freeGraphics.length() <= 0) {
@@ -51,6 +90,23 @@ namespace Memory {
     //     return g;
     // }
     void FreeReservedGraphics(effect &in g, uint &in id) {
+        int i = lastFreeGraphics;
+        int searchEnd = (lastFreeGraphics == RESERVE_GRAPHICS_COUNT-1) ? (0) : (lastFreeGraphics + 1);
+        while(i != searchEnd) {
+            //__debug(i + " searchEnd" + searchEnd);
+            if(reservedGraphics[i] != nil) {
+                if(--i == -1) i = RESERVE_GRAPHICS_COUNT - 1;
+                continue;
+            }
+            reservedGraphics[i] = g;
+            lastFreeGraphics = i;
+            usedGraphics[id] = nil;
+
+            SetSpecialEffectPositionWithZ(g, -9999, -9999, -9999);
+            return;
+        }
+        
+
         // int p = usedGraphics.find(g);
         // if(p < 0) { 
         //     __debug("effect not found");
@@ -73,10 +129,10 @@ namespace Memory {
 
         //if(id == -1) return;
         //__debug("id " + id + " / " + usedGraphics.length());
-        usedGraphics.removeAt(id);
-        freeGraphics.insertLast(g);
+        // usedGraphics.removeAt(id);
+        // freeGraphics.insertLast(g);
 
-        SetSpecialEffectPositionWithZ(g, -9999, -9999, -9999);
+        // SetSpecialEffectPositionWithZ(g, -9999, -9999, -9999);
     }
 
 }

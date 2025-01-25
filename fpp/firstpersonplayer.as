@@ -109,7 +109,7 @@ namespace FPP {
 
             //SetCameraPosition(newX, newY);
             PanCameraToTimed(newX, newY, cameraTime);
-            SetCameraZ(position.z + (PLAYER_HEIGHT / 2) - (PLAYER_HEIGHT / 4) + 100*Sin(Deg2Rad(currentFacing.y)));
+            SetCameraZ(position.z + (PLAYER_HEIGHT / 2) + 100*Sin(Deg2Rad(currentFacing.y)));
             //SetCameraField(CAMERA_FIELD_ZOFFSET, position.z + 90.0f + Sin(Deg2Rad(currentFacing.y)), 0.0);
             SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, cameraTime);
             SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, currentFacing.y, cameraTime);
@@ -143,7 +143,7 @@ namespace FPP {
             if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT) && blockBreakCooldown == 0) {
                 Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
                 if(Collision::RaycastBlock(  @world, 
-                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + (PLAYER_HEIGHT / 2) - (PLAYER_HEIGHT / 4)),
+                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + (PLAYER_HEIGHT / 2)),
                                             GetCameraForward(),
                                             BLOCK_SIZE * 5,
                                             hit)) {
@@ -158,7 +158,7 @@ namespace FPP {
             if(IsKeyPressed(OSKEY_E) && blockBreakCooldown == 0) {
                 Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
                 if(Collision::RaycastBlock(  @world, 
-                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + (PLAYER_HEIGHT / 2) - (PLAYER_HEIGHT / 4)),
+                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + (PLAYER_HEIGHT / 2)),
                                             GetCameraForward(),
                                             BLOCK_SIZE * 5,
                                             hit)) {
@@ -231,7 +231,7 @@ namespace FPP {
             }
         }
 
-        // tries to move towards specified location colliding with world
+        // tries to move colliding with world
         void Move(Vector3 move) {
             Vector3 movement;
 

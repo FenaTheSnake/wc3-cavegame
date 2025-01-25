@@ -96,12 +96,6 @@ namespace Main {
 
 
     void PostInit() {
-        // effect a;
-        // effect b;
-        // if(a == b) {
-        //     print("a==b");
-        // } else print("a!=b");
-
         HideWarcraftInterface();
         Multiplayer::Init();
         Memory::Init();
