@@ -48,7 +48,7 @@ namespace Memory {
 
     effect GetReservedGraphics(uint &out id) {
         if(lastUsedGraphics >= RESERVE_GRAPHICS_COUNT) {
-            print("OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
+            __debug("OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
             DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
             return nil;
         }
@@ -93,7 +93,6 @@ namespace Memory {
         int i = lastFreeGraphics;
         int searchEnd = (lastFreeGraphics == RESERVE_GRAPHICS_COUNT-1) ? (0) : (lastFreeGraphics + 1);
         while(i != searchEnd) {
-            //__debug(i + " searchEnd" + searchEnd);
             if(reservedGraphics[i] != nil) {
                 if(--i == -1) i = RESERVE_GRAPHICS_COUNT - 1;
                 continue;

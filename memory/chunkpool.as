@@ -4,18 +4,19 @@ namespace Memory {
     class ChunkPool {
         array<World::Chunk@> freeChunks;
         array<World::Chunk@> usedChunks;
-        int currentCapacity = CHUNK_POOL_MAX_SIZE;
+        int currentCapacity = CHUNK_POOL_INITIAL_CAPACITY;
 
         ChunkPool() {
-            for(int i = 0; i < CHUNK_POOL_MAX_SIZE; i++) {
+            for(int i = 0; i < CHUNK_POOL_INITIAL_CAPACITY; i++) {
                 freeChunks.insertLast(@World::Chunk());
             }
         }
 
         World::Chunk@ GetChunk() {
             if(freeChunks.length() <= 0) {
-                print("GENERATION CAN'T KEEP UP!\nTry lower render distance.\n");
-                DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "GENERATION CAN'T KEEP UP!\nTry lower render distance.\n");
+                __debug("GENERATION CAN'T KEEP UP!\nChunk pool is full! Might happen if render distance is too high or too many players are generating a lot of chunks.\nIf happens repeatedly, send to me steps to reproduce and following info:");
+                __debug("Capacity: " + currentCapacity + " / " + CHUNK_POOL_HARD_LIMIT + "\nusedChunks len: " + usedChunks.length());
+                DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "GENERATION CAN'T KEEP UP!\nMore info in debug console.");
                 return null;
             }
 
@@ -24,7 +25,7 @@ namespace Memory {
 
             usedChunks.insertLast(c);
 
-            if(freeChunks.length() <= 256) {
+            if(freeChunks.length() <= CHUNK_POOL_ENLARGE_AMOUNT) {
                 Enlarge();
             }
 
@@ -43,8 +44,14 @@ namespace Memory {
         }
 
         void Enlarge() {
-            currentCapacity += 256;
-            for(int i = 0; i < 256; i++) {
+            int prevCapacity = currentCapacity;
+            if(currentCapacity < CHUNK_POOL_HARD_LIMIT - CHUNK_POOL_ENLARGE_AMOUNT) {
+                currentCapacity += CHUNK_POOL_ENLARGE_AMOUNT;
+            } else {
+                currentCapacity = CHUNK_POOL_HARD_LIMIT;
+                __debug("Chunk Pool capacity reached hard limit!");
+            }
+            for(int i = prevCapacity; i < currentCapacity; i++) {
                 freeChunks.insertLast(@World::Chunk());
             }
         }

@@ -7,7 +7,7 @@
 #include "fpp\\firstpersonplayer.as"
 
 namespace Main {
-    int renderDistance = 4;
+    int renderDistance = 5;
     int renderDistance_z = 3;
 
     //Memory::ReservedGraphics@ _debugRD;
@@ -26,6 +26,7 @@ namespace Main {
 
     void LongUpdate() {
         overworld.ProcessRequestedToBuildChunks();
+        overworld.UnloadUnrelevantChunksIfNecessary();
 
         toGenerateBlocks = MAX_GENERATED_BLOCKS_AT_ONCE - (50 - (GetFPS() - 14)) * (MAX_GENERATED_BLOCKS_AT_ONCE / 50);
         toBuildBlocks = MAX_BUILT_BLOCKS_AT_ONCE - (50 - (GetFPS() - 14)) * (MAX_BUILT_BLOCKS_AT_ONCE / 50);
