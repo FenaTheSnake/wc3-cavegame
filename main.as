@@ -5,6 +5,7 @@
 #include "world\\world.as"
 #include "collision\\collision.as"
 #include "fpp\\firstpersonplayer.as"
+#include "save\\worldsave.as"
 
 namespace Main {
     int renderDistance = 5;
@@ -18,6 +19,9 @@ namespace Main {
 
     FPP::FirstPersonPlayer player;
     World::WorldInstance overworld;
+    Save::WorldSave@ overworldSave;
+
+    trigger trig_chatSave;
 
 
     void Update() {
@@ -95,16 +99,28 @@ namespace Main {
     //     // __debug(abc + "");
     // }
 
+    void TestSave() {
+        overworld.Save();
+    }
 
     void PostInit() {
         HideWarcraftInterface();
         Multiplayer::Init();
         Memory::Init();
+
+        @overworldSave = @Save::CreateOrOpenWorldSave("testWorld");
+        @overworld.worldSave = @overworldSave;
+
         player.Init(@overworld, Vector3(-512, 512, 1024));
 
         TimerStart(CreateTimer(), 0.01f, true, @Update);
         TimerStart(CreateTimer(), 0.05f, true, @LongUpdate);
+        //TimerStart(CreateTimer(), 1.00f, true, @IWannaDie);
         //TimerStart(CreateTimer(), 5.00f, false, @Test);
+
+        trig_chatSave = CreateTrigger();
+        TriggerRegisterPlayerChatEvent(trig_chatSave, Player(0), "save", true);
+        TriggerAddAction(trig_chatSave, @TestSave);
     }
 
     // class ReferencedClass {
@@ -122,8 +138,7 @@ namespace Main {
     // }
 
     void Init() {
-        //TimerStart(CreateTimer(), 0.5f, true, @Upd);
-        //return;
+        //__debug("test " + ((0x0000FFFE) & 0x0000FFFF));
 
         SetSkyModel("war3mapImported\\skyLight.mdx");
 

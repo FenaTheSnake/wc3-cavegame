@@ -48,7 +48,7 @@ namespace Memory {
 
     effect GetReservedGraphics(uint &out id) {
         if(lastUsedGraphics >= RESERVE_GRAPHICS_COUNT) {
-            __debug("OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
+            print("OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
             DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "OUT OF ALLOCATED GRAPHICS!\nTry lower render distance.\n");
             return nil;
         }

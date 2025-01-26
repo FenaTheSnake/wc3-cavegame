@@ -6,64 +6,75 @@
 
 namespace World {
     class WorldInstance {
-        dictionary loadedChunks;
+        dictionary loadedChunks;    // contains [ChunkPos: Chunk@]
 
         array<Chunk@> builtChunks;
         array<Chunk@> requestedToBuildChunks;   // chunks that should be built
 
+        Save::WorldSave@ worldSave;
+
         // Loads given chunk if it is not loaded.
         void RequestChunk(const ChunkPos &in position) {
-            //__debug_section_start("RequestChunk " + position);
-            //__debug("loadedChunks size: " + loadedChunks.getSize());
-            //__debug("builtChunks length: " + builtChunks.length());
             if(loadedChunks.exists(position)) {
-                //__debug("already exists.");
-                //__debug_section_end();
                 return;
             }
 
             if(Multiplayer::isHost) {
-                //BenchmarkReset();
-                //BenchmarkStart();
-                Chunk@ c = @Generator::GenerateChunk(position, @this);
-                //BenchmarkEnd();
-                //print("GenerateChunk took " + BenchmarkGetElapsed(2) + " ms.\n");
+                Chunk@ c = @worldSave.LoadChunk(position, @this);
+                if(c == null) @c = @Generator::GenerateChunk(position, @this);
+
                 loadedChunks[position] = @c;
             }
-            //__debug("generated!");
-            //__debug_section_end();
         }
 
         void RequestAndBuildChunk(const ChunkPos &in position) {
-            //__debug_section_start("RequestAndBuildChunk");
             RequestChunk(position);
 
             if(Multiplayer::isHost) {
                 Chunk@ c = cast<Chunk@>(loadedChunks[position]);
                 requestedToBuildChunks.insertLast(@c);
-
-                // if(Builder::BuildChunk(@c)) {
-                //     builtChunks.insertLast(@c);
-                // }
             }
-            //__debug_section_end();
         }
 
         // unloads chunk's graphics, and, if neccessary, unloads chunk completely
         bool UnloadChunk(const ChunkPos &in position) {
-            //__debug_section_start("UnloadChunk " + position);
             if(!loadedChunks.exists(position)) {
                 __debug("(UnloadChunk) Chunk can't be unloaded as it is not loaded: " + position);
-                //__debug_section_end();
                 return false;
             }
             Chunk@ chunk = cast<Chunk@>(loadedChunks[position]);
             if(chunk.generationState >= ChunkGenerationState::GENERATED) {
                 chunk.UnloadGraphics();
-                //Memory::chunkPool.FreeChunk(chunk);
                 chunk.generationState = ChunkGenerationState::GENERATED;
 
                 int c = builtChunks.findByRef(cast<Chunk@>(loadedChunks[position]));
+                if(c < 0) {
+                    return false;
+                }
+
+                builtChunks.removeAt(c);
+                return true;
+            } else {
+                chunk.generationState = ChunkGenerationState::UNLOADED;
+                loadedChunks.delete(position);
+                return true;
+            }
+        }
+        bool UnloadChunkCompletely(const ChunkPos &in position) {
+            if(!loadedChunks.exists(position)) {
+                __debug("(UnloadChunkCompletely) Chunk can't be unloaded as it is not loaded: " + position);
+                return false;
+            }
+            Chunk@ chunk = cast<Chunk@>(loadedChunks[position]);
+            if(chunk.generationState >= ChunkGenerationState::GENERATED) {
+                chunk.UnloadGraphics();
+                chunk.generationState = ChunkGenerationState::UNLOADED;
+
+                int c = builtChunks.findByRef(cast<Chunk@>(loadedChunks[position]));
+                loadedChunks[position] = null;
+                loadedChunks.delete(position);
+
+                Memory::chunkPool.FreeChunk(chunk);
                 if(c < 0) {
                     //__debug("chunk is loaded but not built!");
                     //__debug_section_end();
@@ -71,8 +82,6 @@ namespace World {
                 }
 
                 builtChunks.removeAt(c);
-                //loadedChunks[position] = null;
-                //loadedChunks.delete(position);
                 //__debug("unloaded successfully!");
                 //__debug_section_end();
                 return true;
@@ -97,12 +106,33 @@ namespace World {
             for(uint i = 0; i < builtChunks.length(); i++) {
                 if(!(builtChunks[i].on_map_position.x > localCenter.x - Main::renderDistance && builtChunks[i].on_map_position.x < localCenter.x + Main::renderDistance &&
                      builtChunks[i].on_map_position.y > localCenter.y - Main::renderDistance && builtChunks[i].on_map_position.y < localCenter.y + Main::renderDistance &&
-                     builtChunks[i].on_map_position.z > localCenter.z - Main::renderDistance_z && builtChunks[i].on_map_position.z < localCenter.z + Main::renderDistance_z)) {
+                     builtChunks[i].position.z > center.z - Main::renderDistance_z && builtChunks[i].position.z < center.z + Main::renderDistance_z)) {
                     //__debug("unload chunk");
                     if(UnloadChunk(builtChunks[i].position)) {
                         _debug_unloaded ++;
                         i--;
                     }
+                }
+            }
+
+            for(uint i = 0; i < requestedToBuildChunks.length(); i++) {
+                if(!(requestedToBuildChunks[i].on_map_position.x > localCenter.x - Main::renderDistance && requestedToBuildChunks[i].on_map_position.x < localCenter.x + Main::renderDistance &&
+                     requestedToBuildChunks[i].on_map_position.y > localCenter.y - Main::renderDistance && requestedToBuildChunks[i].on_map_position.y < localCenter.y + Main::renderDistance &&
+                     requestedToBuildChunks[i].position.z > center.z - Main::renderDistance_z && requestedToBuildChunks[i].position.z < center.z + Main::renderDistance_z)) {
+                    //requestedToBuildChunks[i].generationState = ChunkGenerationState::GENERATED;
+                    requestedToBuildChunks.removeAt(i);
+                    i--;
+                }
+            }
+
+            for(uint i = 0; i < Builder::chunksBeingBuilt.length(); i++) {
+                if(!(Builder::chunksBeingBuilt[i].chunk.on_map_position.x > localCenter.x - Main::renderDistance && Builder::chunksBeingBuilt[i].chunk.on_map_position.x < localCenter.x + Main::renderDistance &&
+                     Builder::chunksBeingBuilt[i].chunk.on_map_position.y > localCenter.y - Main::renderDistance && Builder::chunksBeingBuilt[i].chunk.on_map_position.y < localCenter.y + Main::renderDistance &&
+                     Builder::chunksBeingBuilt[i].chunk.position.z > center.z - Main::renderDistance_z && Builder::chunksBeingBuilt[i].chunk.position.z < center.z + Main::renderDistance_z)) {
+                    Builder::chunksBeingBuilt[i].chunk.UnloadGraphics();
+                    Builder::chunksBeingBuilt[i].chunk.generationState = ChunkGenerationState::GENERATED;
+                    Builder::chunksBeingBuilt.removeAt(i);
+                    i--;
                 }
             }
 
@@ -139,15 +169,9 @@ namespace World {
 
         // unloads all chunks that are generated but not built
         void UnloadUnrelevantChunksIfNecessary() {
-            return;
-            // if(Memory::chunkPool.usedChunks.length() < CHUNK_POOL_SOFT_LIMIT) return;
-            // array<string>@ keys = loadedChunks.getKeys();
-            // for(int i = 0; i < keys.length(); i++) {
-            //     Chunk@ c = cast<Chunk@>(loadedChunks[keys]);
-            //     if(c.generationState == ChunkGenerationState::GENERATED) {
-
-            //     }
-            // }
+            if(Memory::chunkPool.IsRequiresClearing()) {
+                Save();
+            }
         }
 
         // true = block is not visible
@@ -270,7 +294,7 @@ namespace World {
                 for(int j = lbd.y; j <= rfu.y; j++) {
                     for(int k = lbd.z; k <= rfu.z; k++) {
                         ChunkPos c = ChunkPos(i, j, k);
-                        if(loadedChunks.exists(c) && cast<Chunk@>(loadedChunks[c]).generationState >= ChunkGenerationState::GENERATED) {
+                        if(loadedChunks.exists(c) && cast<Chunk@>(loadedChunks[c]).generationState >= ChunkGenerationState::BUILT) {
                             chunks.insertLast(cast<Chunk@>(loadedChunks[c]));
                         } else lastAABBChunksGetWasSuccessful = false;
                     }
@@ -320,7 +344,7 @@ namespace World {
             return boxes;
         }
 
-        // updates already built chunks position according to provided location
+        // updates already built chunks position
         // used when player loops back to reposition already generated chunks and do not generate them again
         void UpdateBuiltChunksPositions() {
             for(uint i = 0; i < builtChunks.length(); i++) {
@@ -339,6 +363,27 @@ namespace World {
                 }
             }
 
+            for(uint i = 0; i < requestedToBuildChunks.length(); i++) {
+                requestedToBuildChunks[i].on_map_position = World::ChunkPosToWC3Position(requestedToBuildChunks[i].position);
+            }
+        }
+
+        // saves all loaded chunks and unloads all chunks that are unrelevant (not built and no players are inside)
+        void Save() {
+            worldSave.BeginSaving();
+
+            array<string>@ keys = loadedChunks.getKeys();
+            for(int i = 0; i < keys.length(); i++) {
+                Chunk@ c = cast<Chunk@>(loadedChunks[keys[i]]);
+                if(c.generationState >= ChunkGenerationState::GENERATED && c.wasModified) {
+                    worldSave.AddChunk(@c);
+                }
+                if(c.generationState == ChunkGenerationState::GENERATED) {
+                    UnloadChunkCompletely(c.position);
+                }
+            }
+
+            worldSave.FinishSaving();
         }
     }
 
@@ -348,8 +393,8 @@ namespace World {
     }
 
     // Converts absolute world position to wc3's position (Bound to map limits)
-    // The map is looped in n = (MAP_SIZE / CHUNK_SIZE - renderDistance*2) chunks (32 - 4 with default settings)
-    // it means you get looped back every n (28) chunks.
+    // The map is looped in n = (MAP_SIZE / CHUNK_SIZE - renderDistance*2) chunks (32 - 8 with default settings)
+    // it means you get looped back every n (24) chunks.
     // 'placeOutOfBorder' checks if player is near border so it return coordinates beyond the border
     // to make an illusion of seamless world.
     // commonly should be 'true' for every situation expect for the player itself.
@@ -435,6 +480,7 @@ namespace World {
 
     ChunkPos ChunkPosToWC3Position(const ChunkPos &in position) {
         Vector3 v = AbsolutePositionToWC3Position(Vector3(position.x * CHUNK_SIZE * BLOCK_SIZE, position.y * CHUNK_SIZE * BLOCK_SIZE, position.z * CHUNK_SIZE * BLOCK_SIZE), true);
+        //__debug("chunkPosToWC3 " + position + " -> " + ChunkPos(int(v.x / BLOCK_SIZE / CHUNK_SIZE), int(v.y / BLOCK_SIZE / CHUNK_SIZE), int(v.z / BLOCK_SIZE / CHUNK_SIZE)));
         return ChunkPos(int(v.x / BLOCK_SIZE / CHUNK_SIZE), int(v.y / BLOCK_SIZE / CHUNK_SIZE), int(v.z / BLOCK_SIZE / CHUNK_SIZE));
     }
 

@@ -55,5 +55,9 @@ namespace Memory {
                 freeChunks.insertLast(@World::Chunk());
             }
         }
+
+        bool IsRequiresClearing() {
+            return usedChunks.length() >= CHUNK_POOL_SOFT_LIMIT;
+        }
     }
 }

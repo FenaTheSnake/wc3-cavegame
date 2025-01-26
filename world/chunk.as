@@ -57,6 +57,7 @@ namespace World {
         ChunkPos position; // pos in world. Ex. (0,0,1) = this chunk's (0,0,0) block is at (0,0,CHUNK_SIZE) in the world
         ChunkPos on_map_position;   // position on wc3 map (is bound to map limits)
         ChunkGenerationState generationState;
+        bool wasModified = false;        // was modified in any way after generation
 
         WorldInstance@ world;
         array<array<array<BlockID>>> blocks(CHUNK_SIZE, array<array<BlockID>>(CHUNK_SIZE, array<BlockID>(CHUNK_SIZE)));
@@ -132,6 +133,8 @@ namespace World {
             //__debug("SetBlock " + blockPos.chunk.position + ": " + blockPos.x + " " + blockPos.y + " " + blockPos.z);
             blocks[blockPos.x][blockPos.y][blockPos.z] = id;
             Builder::UpdateChunkBlockGraphics(blockPos, true);
+
+            wasModified = true;
             //__debug_section_end();
         }
 
@@ -146,6 +149,21 @@ namespace World {
             }
 
             return s;
+        }
+
+        void Deserialize(const string &in data) {
+            array<string>@ ss = data.split("|");
+            position = ChunkPos(parseInt(ss[0]), parseInt(ss[1]), parseInt(ss[2]));
+
+            int c = 0;
+            for(int i = 0; i < CHUNK_SIZE; i++) {
+                for(int j = 0; j < CHUNK_SIZE; j++) {
+                    for(int k = 0; k < CHUNK_SIZE; k++) {
+                        blocks[i][j][k] = BlockID(parseInt(ss[3].substr(c, 3)));
+                        c += 3;
+                    }
+                }
+            }
         }
     }
 }

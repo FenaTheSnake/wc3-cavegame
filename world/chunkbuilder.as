@@ -83,6 +83,7 @@ namespace World {
             }
 
             chunk.generationState = ChunkGenerationState::BUILDING;
+            chunk.on_map_position = World::ChunkPosToWC3Position(chunk.position);
             chunksBeingBuilt.insertLast(BuildingChunkData(@chunk));
 
             return true;

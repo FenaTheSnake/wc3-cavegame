@@ -36,7 +36,6 @@ namespace World {
     class Block {
         BlockID id;
         bool debug;
-        effect graphics;
 
         Block() {
             this.id = BlockID::AIR;

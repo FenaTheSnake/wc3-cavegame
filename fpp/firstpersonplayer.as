@@ -92,7 +92,7 @@ namespace FPP {
                 SetCameraPosition(position.x, position.y);
                 SetCameraField(CAMERA_FIELD_ZOFFSET, position.z, 0.0);
             }
-            if(d > 5000.0f) {
+            if(d > 2000.0f) {
                 world.UpdateBuiltChunksPositions();
             }
         }
@@ -231,7 +231,7 @@ namespace FPP {
                 }
             }
             if(!waitingForChunksToLoad) {
-                if(motion.z > -32.0f) {
+                if(motion.z > PLAYER_MAX_FALLING_SPEED) {
                     motion.z -= GRAVITY * 1.0f/60.0f;
                 }
             }

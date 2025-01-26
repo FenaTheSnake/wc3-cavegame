@@ -363,3 +363,23 @@ Vector3 GetCameraRight() {
 bool IsZero(float val) {
     return val < EPSILON && val > -EPSILON;
 }
+
+string UInt2StringLengthOf3(uint val) {
+    if(val < 10) return "00" + val;
+    if(val < 100) return "0" + val;
+    return "" + val;
+}
+
+uint HIWORD(uint val) {
+    return (val >> 16) & 0x0000FFFF;
+}
+uint LOWORD(uint val) {
+    return val & 0x0000FFFF;
+}
+
+uint UINTID2ChunkFileID(uint val) {
+    return (val >> 12) & 0x000FFFFF;
+}
+uint UINTID2ChunkID(uint val) {
+    return val & 0x00000FFF;
+}
