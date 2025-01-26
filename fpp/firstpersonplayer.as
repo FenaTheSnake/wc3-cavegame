@@ -29,9 +29,9 @@ namespace FPP {
         float fov = PLAYER_DEFAULT_FOV;
         Vector2 targetFacing;
         Vector2 currentFacing;
-        float facingSmoothFactor = 22.0f;
+        float facingSmoothFactor = 24.0f;
 
-        float cameraTime = 0.05f;
+        float cameraTime = 0.02f;
 
         float speed = 4.0f;
         float cameraSpeed = 100.0f;
@@ -138,8 +138,8 @@ namespace FPP {
                     currentFacing.x = targetFacing.x;
                     //SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, 0);
                 }
-                if(targetFacing.y > 89.0f) targetFacing.y = 89.0f;
-                if(targetFacing.y < -89.0f) targetFacing.y = -89.0f;
+                if(targetFacing.y > 89.9f) targetFacing.y = 89.9f;
+                if(targetFacing.y < -89.9f) targetFacing.y = -89.9f;
 
 
                 SetMouseScreenRelativePosition(SCREEN_CENTER.x, SCREEN_CENTER.y);
@@ -151,22 +151,23 @@ namespace FPP {
                 if(Collision::RaycastBlock(  @world, 
                                             Vector3(absolute_position.x, absolute_position.y, absolute_position.z + PLAYER_DEFAULT_EYES_POSITION),
                                             GetCameraForward(),
-                                            BLOCK_SIZE * 5,
+                                            8,
                                             hit)) {
                     World::Chunk@ chunk = @hit.position.chunk;
                     chunk.SetBlock(World::BlockPos(@chunk,
                                             hit.position.x,// - chunk.position.x * CHUNK_SIZE, 
                                             hit.position.y,// - chunk.position.y * CHUNK_SIZE, 
                                             hit.position.z), World::BlockID::AIR);// - chunk.position.z * CHUNK_SIZE), World::BlockID::AIR);
-                    blockBreakCooldown = 10;
+                    
                 }
+                blockBreakCooldown = 10;
             }
-            if(IsKeyPressed(OSKEY_E) && blockBreakCooldown == 0) {
+            if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_MIDDLE) && blockBreakCooldown == 0) {
                 Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
                 if(Collision::RaycastBlock(  @world, 
                                             Vector3(absolute_position.x, absolute_position.y, absolute_position.z + PLAYER_DEFAULT_EYES_POSITION),
                                             GetCameraForward(),
-                                            BLOCK_SIZE * 5,
+                                            8,
                                             hit)) {
                     //__debug("pos " + hit.position + " face " + hit.face);
                     Vector3I placementPosition = Vector3I(  hit.position.chunk.position.x*CHUNK_SIZE + hit.position.x, 
@@ -174,8 +175,9 @@ namespace FPP {
                                                             hit.position.chunk.position.z*CHUNK_SIZE + hit.position.z) + hit.face;
                     World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(placementPosition.x, placementPosition.y, placementPosition.z));
                     bpos.chunk.SetBlock(bpos, World::BlockID::GRASS);// - chunk.position.z * CHUNK_SIZE), World::BlockID::GRASS);
-                    blockBreakCooldown = 10;
+                    
                 }
+                blockBreakCooldown = 10;
             }
         }
 
@@ -186,19 +188,18 @@ namespace FPP {
             if(IsKeyPressed(OSKEY_D)) x += 1.0f;
             if(IsKeyPressed(OSKEY_A)) x -= 1.0f;
 
-            if(x == 0.0f && y == 0.0f) {
-                isSprinting = false;
-            }
 
             Vector3 fwd = GetCameraForward();
             Vector3 right = GetCameraRight();
-            fwd.z = 0; right.z = 0;
+            //fwd.z = 0; right.z = 0;
 
-            Vector3 movement = (fwd * y + right * x).Normalized();
-            movement *= speed;
+            Vector3 movement = (fwd * y + right * x);
+            movement = Vector3(movement.x * 100, movement.y * 100, 0).Normalized() * speed;
 
             if(IsKeyPressed(OSKEY_SPACE) && onGround) {
                 movement.z = PLAYER_JUMP_STRENGTH;
+                movement.x *= 3.0f;
+                movement.y *= 3.0f;
             }
             if(IsKeyPressed(OSKEY_SHIFT)) {
                 isSneaking = true;
@@ -210,6 +211,10 @@ namespace FPP {
             if(IsKeyPressed(OSKEY_CONTROL)) {
                 isSprinting = true;
                 isSneaking = false;
+            }
+
+            if(y < 1.0f) {
+                isSprinting = false;
             }
 
             speed = (isSneaking) ? (PLAYER_SNEAKING_SPEED) : (isSprinting ? PLAYER_SPRINTING_SPEED : PLAYER_DEFAULT_SPEED);

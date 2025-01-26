@@ -25,6 +25,10 @@ namespace Main {
 
 
     void Update() {
+        // if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT)) __debug("left");
+        // if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_MIDDLE)) __debug("mid");
+        // if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_RIGHT)) __debug("right");
+        // if(IsMouseKeyPressed(ConvertMouseButtonType(4))) __debug("5");
         player.Update();
     }
 
@@ -103,6 +107,11 @@ namespace Main {
         overworld.Save();
     }
 
+    trigger trig_onMouse;
+    void OnMouseKeyPressed() {
+
+    }
+
     void PostInit() {
         HideWarcraftInterface();
         Multiplayer::Init();
@@ -118,9 +127,16 @@ namespace Main {
         //TimerStart(CreateTimer(), 1.00f, true, @IWannaDie);
         //TimerStart(CreateTimer(), 5.00f, false, @Test);
 
-        trig_chatSave = CreateTrigger();
-        TriggerRegisterPlayerChatEvent(trig_chatSave, Player(0), "save", true);
-        TriggerAddAction(trig_chatSave, @TestSave);
+
+        for(int i = 0; i < 12; i++) {
+            trig_chatSave = CreateTrigger();
+            TriggerRegisterPlayerChatEvent(trig_chatSave, Player(i), "save", true);
+            TriggerAddAction(trig_chatSave, @TestSave);
+
+            // trig_onMouse = CreateTrigger();
+            // TriggerRegisterPlayerKeyEvent(trig_onMouse, Player(i), );
+            // TriggerAddAction(trig_onMouse, @TestSave);
+        }
     }
 
     // class ReferencedClass {
