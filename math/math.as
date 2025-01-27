@@ -1,3 +1,5 @@
+#include "noise.as"
+
 const float e = 2.71828f;
 
 class Vector2 {

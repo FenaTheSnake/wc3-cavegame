@@ -49,15 +49,24 @@ namespace World {
                             //     data.chunk.blocks[i][j][k] = Block(BlockID::GRASS);
                             // else data.chunk.blocks[i][j][k] = Block(BlockID::AIR);
 
-                            if(p.z*CHUNK_SIZE+k <= (p.x*CHUNK_SIZE+i) / 10) {
-                                if(k < CHUNK_SIZE-1) data.chunk.blocks[i][j][k] = BlockID::GRASS;
-                                else data.chunk.blocks[i][j][k] = BlockID::DIRT;
-                                if(k > 0) {
-                                    if(data.chunk.blocks[i][j][k-1] == BlockID::GRASS)
-                                        data.chunk.blocks[i][j][k-1] = BlockID::DIRT;
+                            float gx = p.x*CHUNK_SIZE+i;
+                            float gy = p.y*CHUNK_SIZE+j;
+                            float gz = p.z*CHUNK_SIZE+k;
+                            float ovNoise = OverworldNoise(gx, gy);
+                            if(gz > ovNoise - 30.0f) {
+                                if(gz <= ovNoise) {
+                                    data.chunk.blocks[i][j][k] = BlockID::GRASS;
+                                    if(k > 0) {
+                                        if(data.chunk.blocks[i][j][k-1] == BlockID::GRASS)
+                                            data.chunk.blocks[i][j][k-1] = BlockID::DIRT;
+                                    }
                                 }
+                                else data.chunk.blocks[i][j][k] = BlockID::AIR;
+                            } else {
+                                float ugNoise = UndergroundNoise(gx, gy, gz);
+                                if(ugNoise <= -3.064f) data.chunk.blocks[i][j][k] = BlockID::AIR;
+                                else data.chunk.blocks[i][j][k] = BlockID::STONE;
                             }
-                            else data.chunk.blocks[i][j][k] = BlockID::AIR;
 
                             // if((i == 0 && j == 0) || (j == 0 && k == 0) || (i == 0 && k == 0)) data.chunk.blocks[i][j][k] = Block(BlockID::EARTH);
                             // else data.chunk.blocks[i][j][k] = Block(BlockID::AIR);
@@ -86,6 +95,16 @@ namespace World {
             chunksBeingGenerated.insertLast(GeneratingChunkData(@chunk));
 
             return chunk;
+        }
+
+        float OverworldNoise(float x, float y) {
+            float terrain1 = noise2(x * 0.01743f, y * 0.017212f) * 5.0f;
+            float terrain2 = noise2(x * 0.004023f, y * 0.00577809f) * 20.0f;
+            float terrain3 = noise2(x * 0.1053335f, y * 0.0949839f) * 4.233f;
+            return terrain1+terrain2+terrain3;
+        }
+        float UndergroundNoise(float x, float y, float z) {
+            return noise3(x * 0.0853f, y * 0.1007, z*0.0914403) * 16.2f;
         }
     }
 }

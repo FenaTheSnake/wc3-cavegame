@@ -24,11 +24,12 @@ namespace Multiplayer {
             this.p = p;
 
             SetSpecialEffectPlayerColour(model, ConvertPlayerColor(GetPlayerId(p)));
+            SetSpecialEffectScale(model, 2.0f);
         }
 
         void UpdateModel() {
             Vector3 pos = World::AbsolutePositionToWC3Position(visual_position, true);
-            SetSpecialEffectPositionWithZ(model, pos.x, pos.y, pos.z);
+            SetSpecialEffectPositionWithZ(model, pos.x, pos.y, pos.z - (PLAYER_HEIGHT / 2));
             SetSpecialEffectFacing(model, visual_facing);
 
             float dist = Vector3Distance(position, visual_position);

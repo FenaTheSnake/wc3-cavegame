@@ -119,7 +119,12 @@ namespace Main {
     }
 
     void PostInit() {
-        //MPTest::Start();
+        // for(int i = 0; i < 3; i++) {
+        //     for(int j = 0; j < 3; j++) {
+        //         __debug("noise " + i + " " + j + ": " + noise2(i * 12.8545f,j * -.92227f));
+        //     }
+        // }
+        // return;
 
         //return;
 
