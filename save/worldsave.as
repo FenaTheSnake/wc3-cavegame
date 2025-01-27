@@ -150,6 +150,7 @@ namespace Save {
         } 
     }
 
+    // would return null if world with this name already exists
     WorldSave@ CreateWorldSave(string name) {
         if(TextFileExists(PATH_SAVES + name + "\\" + PATH_WORLD_FILE + SAVE_EXTENSION)) {
             return null;
@@ -162,6 +163,25 @@ namespace Save {
 
         __debug("WorldSave \"" + name + "\" created.");
         return @worldSave;
+    }
+
+    string GetFreeWorldSaveName(string name) {
+        string newName = name;
+        uint count = 1;
+        while(TextFileExists(PATH_SAVES + newName + "\\" + PATH_WORLD_FILE + SAVE_EXTENSION)) {
+            newName = name + "~" + count;
+            count += 1;
+            if(count >= 1000) {
+                __debug("Please clear your saves folder! (too many worlds with same name)");
+                return "PLEASE_CLEAR_YOUR_SAVES_FOLDER";
+            }
+        }
+        return newName;
+    }
+
+    // would create a new world with suffix if world with this name already exists
+    WorldSave@ CreateWorldSaveWithFreeName(string name) {
+        return CreateWorldSave(GetFreeWorldSaveName(name));
     }
 
     WorldSave@ OpenWorldSave(string name) {
@@ -181,7 +201,7 @@ namespace Save {
         return @worldSave;
     }
 
-    WorldSave@ CreateOrOpenWorldSave(string name) {
+    WorldSave@ OpenOrCreateWorldSave(string name) {
         WorldSave@ worldSave = OpenWorldSave(name);
         if(worldSave != null) return @worldSave;
         return @CreateWorldSave(name);

@@ -59,3 +59,14 @@ const string SAVE_EXTENSION = ".txt";
 
 const int SAVE_CHUNK_MAX_AMOUNT = 0x00000FFF;             // max amount of chunks per chunkfile
 const int SAVE_CHUNK_SERIALIZATION_SIZE = 1550;     // size of each chunk serialized data in bytes (UNUSED)
+
+// == MULTIPLAYER ==
+
+const string MP_CHUNK_SYNC_REQUEST_PREFIX = "csr";
+const string MP_CHUNK_SYNC_ANSWER_PREFIX = "csa";
+const string MP_SETBLOCK_PREFIX = "sb";
+
+const int MP_SYNCHT_POS_X = 0;
+const int MP_SYNCHT_POS_Y = 1;
+const int MP_SYNCHT_POS_Z = 2;
+const int MP_SYNCHT_FACING = 3;

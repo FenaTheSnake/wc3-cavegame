@@ -49,7 +49,14 @@ namespace World {
                             //     data.chunk.blocks[i][j][k] = Block(BlockID::GRASS);
                             // else data.chunk.blocks[i][j][k] = Block(BlockID::AIR);
 
-                            if(p.z*CHUNK_SIZE+k <= (p.x*CHUNK_SIZE+i) / 10) data.chunk.blocks[i][j][k] = BlockID::GRASS;
+                            if(p.z*CHUNK_SIZE+k <= (p.x*CHUNK_SIZE+i) / 10) {
+                                if(k < CHUNK_SIZE-1) data.chunk.blocks[i][j][k] = BlockID::GRASS;
+                                else data.chunk.blocks[i][j][k] = BlockID::DIRT;
+                                if(k > 0) {
+                                    if(data.chunk.blocks[i][j][k-1] == BlockID::GRASS)
+                                        data.chunk.blocks[i][j][k-1] = BlockID::DIRT;
+                                }
+                            }
                             else data.chunk.blocks[i][j][k] = BlockID::AIR;
 
                             // if((i == 0 && j == 0) || (j == 0 && k == 0) || (i == 0 && k == 0)) data.chunk.blocks[i][j][k] = Block(BlockID::EARTH);

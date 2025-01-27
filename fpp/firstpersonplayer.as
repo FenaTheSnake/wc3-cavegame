@@ -36,6 +36,7 @@ namespace FPP {
         float speed = 4.0f;
         float cameraSpeed = 100.0f;
 
+        World::BlockID selectedBlock = World::BlockID::GRASS;
         int blockBreakCooldown = 0;
 
         private World::ChunkPos _currentChunk;
@@ -154,10 +155,9 @@ namespace FPP {
                                             8,
                                             hit)) {
                     World::Chunk@ chunk = @hit.position.chunk;
-                    chunk.SetBlock(World::BlockPos(@chunk,
-                                            hit.position.x,// - chunk.position.x * CHUNK_SIZE, 
-                                            hit.position.y,// - chunk.position.y * CHUNK_SIZE, 
-                                            hit.position.z), World::BlockID::AIR);// - chunk.position.z * CHUNK_SIZE), World::BlockID::AIR);
+                    World::BlockPos p = World::BlockPos(@chunk, hit.position.x, hit.position.y, hit.position.z);
+                    chunk.SetBlock(p, World::BlockID::AIR);
+                    Multiplayer::SendSetBlock(p, World::BlockID::AIR);
                     
                 }
                 blockBreakCooldown = 10;
@@ -174,7 +174,8 @@ namespace FPP {
                                                             hit.position.chunk.position.y*CHUNK_SIZE + hit.position.y, 
                                                             hit.position.chunk.position.z*CHUNK_SIZE + hit.position.z) + hit.face;
                     World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(placementPosition.x, placementPosition.y, placementPosition.z));
-                    bpos.chunk.SetBlock(bpos, World::BlockID::GRASS);// - chunk.position.z * CHUNK_SIZE), World::BlockID::GRASS);
+                    bpos.chunk.SetBlock(bpos, selectedBlock);
+                    Multiplayer::SendSetBlock(bpos, selectedBlock);
                     
                 }
                 blockBreakCooldown = 10;
@@ -220,12 +221,14 @@ namespace FPP {
             speed = (isSneaking) ? (PLAYER_SNEAKING_SPEED) : (isSprinting ? PLAYER_SPRINTING_SPEED : PLAYER_DEFAULT_SPEED);
             fov = isSprinting ? PLAYER_SPRINTING_FOV : PLAYER_DEFAULT_FOV;
             eyePosition = isSneaking ? PLAYER_SNEAKING_EYES_POSITION : PLAYER_DEFAULT_EYES_POSITION;
-
-            // if(IsKeyPressed(OSKEY_SPACE)) movement.z = 1.0f * speed;
-            // if(IsKeyPressed(OSKEY_SHIFT)) movement.z = -1.0f * speed;
             
             motion += movement;
-            //SetPosition(absolute_position + movement);
+
+            if(IsKeyPressed(OSKEY_1)) selectedBlock = World::BlockID::GRASS;
+            if(IsKeyPressed(OSKEY_2)) selectedBlock = World::BlockID::DIRT;
+            if(IsKeyPressed(OSKEY_3)) selectedBlock = World::BlockID::STONE;
+            if(IsKeyPressed(OSKEY_4)) selectedBlock = World::BlockID::LOG;
+            if(IsKeyPressed(OSKEY_5)) selectedBlock = World::BlockID::LEAVES;
         }
     
         void Update() {

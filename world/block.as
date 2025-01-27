@@ -1,8 +1,13 @@
 namespace World {
     enum BlockID {
         AIR = 0,
-        GRASS
+        GRASS,
+        DIRT,
+        STONE,
+        LOG,
+        LEAVES
     }
+
     class BlockPos {
         Chunk@ chunk;
         int x, y, z;
@@ -29,6 +34,15 @@ namespace World {
                 return "(" + this.chunk.position + " " + this.x + " " + this.y + " " + this.z + ")"; 
             }
         }
+    }
+
+    string BlockID2Texture(BlockID id) {
+        if(id == BlockID::GRASS) return "grassBlock.blp";
+        if(id == BlockID::STONE) return "stoneBlock.blp";
+        if(id == BlockID::LOG) return "logBlock.blp";
+        if(id == BlockID::LEAVES) return "leavesBlock.blp";
+        
+        return "dirtBlock.blp";
     }
 
     int _debug_blocks_count = 0;

@@ -130,12 +130,30 @@ namespace World {
         }
 
         void SetBlock(BlockPos blockPos, BlockID id) {
-            //__debug("SetBlock " + blockPos.chunk.position + ": " + blockPos.x + " " + blockPos.y + " " + blockPos.z);
             blocks[blockPos.x][blockPos.y][blockPos.z] = id;
-            Builder::UpdateChunkBlockGraphics(blockPos, true);
+
+            if(id != BlockID::AIR) {
+                BlockPos abpos = BlockPos(blockPos.x + position.x * CHUNK_SIZE, blockPos.y + position.y * CHUNK_SIZE, (blockPos.z - 1) + position.z * CHUNK_SIZE);
+                BlockPos bpos = world.GetBlockByAbsoluteBlockPos(abpos);
+                if(bpos.chunk.blocks[bpos.x][bpos.y][bpos.z] == BlockID::GRASS) {
+                    bpos.chunk.SetBlock(bpos, BlockID::DIRT);
+                }
+            }
+
+            if(id == BlockID::GRASS) {
+                BlockPos abpos = BlockPos(blockPos.x + position.x * CHUNK_SIZE, blockPos.y + position.y * CHUNK_SIZE, (blockPos.z + 1) + position.z * CHUNK_SIZE);
+                BlockPos bpos = world.GetBlockByAbsoluteBlockPos(abpos);
+                if(bpos.chunk.blocks[bpos.x][bpos.y][bpos.z] != BlockID::AIR) {
+                    id = BlockID::DIRT;
+                    blocks[blockPos.x][blockPos.y][blockPos.z] = id;
+                }
+            }
+
+            if(generationState >= ChunkGenerationState::BUILDING) {
+                Builder::UpdateChunkBlockGraphics(blockPos, true);
+            }
 
             wasModified = true;
-            //__debug_section_end();
         }
 
         string Serialize() {

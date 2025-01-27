@@ -6,6 +6,7 @@
 #include "collision\\collision.as"
 #include "fpp\\firstpersonplayer.as"
 #include "save\\worldsave.as"
+#include "mptest.as"
 
 namespace Main {
     int renderDistance = 5;
@@ -40,6 +41,7 @@ namespace Main {
         toBuildBlocks = MAX_BUILT_BLOCKS_AT_ONCE - (50 - (GetFPS() - 14)) * (MAX_BUILT_BLOCKS_AT_ONCE / 50);
         World::Generator::ProcessGeneratingChunks();
         World::Builder::ProcessBuildingChunks();
+        Multiplayer::Update();
 
         string dbg = "FPS: " + GetFPS() + "\n";
         dbg += "Generating Chunks / Max Generated Blocks: " + World::Generator::chunksBeingGenerated.length() + " / " + toGenerateBlocks + "\n";
@@ -56,6 +58,10 @@ namespace Main {
         // }
 
         //__debug("Requested To Build Chunks: " + overworld.requestedToBuildChunks.length() + "\nProcessing Generating Chunks: " + World::Generator::chunksBeingGenerated.length() + "\nProcessing Building Chunks: " + World::Builder::chunksBeingBuilt.length());
+    }
+
+    void PeersSyncUpdate() {
+        Multiplayer::SyncAllPeersPositions();
     }
 
     void Test() {
@@ -113,17 +119,23 @@ namespace Main {
     }
 
     void PostInit() {
+        //MPTest::Start();
+
+        //return;
+
         HideWarcraftInterface();
+        SetWidescreenState(true);
         Multiplayer::Init();
         Memory::Init();
 
-        @overworldSave = @Save::CreateOrOpenWorldSave("testWorld");
+        @overworldSave = @Save::CreateWorldSaveWithFreeName("testWorld");
         @overworld.worldSave = @overworldSave;
 
         player.Init(@overworld, Vector3(-512, 512, 1024));
 
         TimerStart(CreateTimer(), 0.01f, true, @Update);
         TimerStart(CreateTimer(), 0.05f, true, @LongUpdate);
+        TimerStart(CreateTimer(), 0.20f, true, @PeersSyncUpdate);
         //TimerStart(CreateTimer(), 1.00f, true, @IWannaDie);
         //TimerStart(CreateTimer(), 5.00f, false, @Test);
 

@@ -14,26 +14,32 @@ namespace World {
         Save::WorldSave@ worldSave;
 
         // Loads given chunk if it is not loaded.
-        void RequestChunk(const ChunkPos &in position) {
+        Chunk@ RequestChunk(const ChunkPos &in position) {
             if(loadedChunks.exists(position)) {
-                return;
+                return null;
             }
 
-            if(Multiplayer::isHost) {
+            //if(Multiplayer::isHost) {
                 Chunk@ c = @worldSave.LoadChunk(position, @this);
                 if(c == null) @c = @Generator::GenerateChunk(position, @this);
 
                 loadedChunks[position] = @c;
-            }
+
+                return @c;
+            // } else {
+            //     Chunk@ c = Multiplayer::RequestChunk(position);
+
+            //     loadedChunks[position] = @c;
+            // }
         }
 
         void RequestAndBuildChunk(const ChunkPos &in position) {
             RequestChunk(position);
 
-            if(Multiplayer::isHost) {
+            //if(Multiplayer::isHost) {
                 Chunk@ c = cast<Chunk@>(loadedChunks[position]);
                 requestedToBuildChunks.insertLast(@c);
-            }
+            //}
         }
 
         // unloads chunk's graphics, and, if neccessary, unloads chunk completely
@@ -257,13 +263,18 @@ namespace World {
             return BlockPos();
         }
         Chunk@ GetChunkByBlockPos(BlockPos blockPos) {
-            return @blockPos.chunk;
-            // ChunkPos c = ChunkPos(MathRealFloor(1.0f*blockPos.x / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.y / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.z / CHUNK_SIZE));
-            // if(loadedChunks.exists(c) && cast<Chunk@>(loadedChunks[c]).generationState >= ChunkGenerationState::GENERATED) {
-            //     Chunk@ chunk = cast<Chunk@>(loadedChunks[c]);
-            //     return chunk;
-            // }
-            // return null;
+            if(blockPos.chunk != null) return @blockPos.chunk;
+            ChunkPos c = ChunkPos(MathRealFloor(1.0f*blockPos.x / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.y / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.z / CHUNK_SIZE));
+            if(loadedChunks.exists(c) && cast<Chunk@>(loadedChunks[c]).generationState >= ChunkGenerationState::GENERATED) {
+                Chunk@ chunk = cast<Chunk@>(loadedChunks[c]);
+                return chunk;
+            }
+            return null;
+        }
+        ChunkPos GetChunkPosByBlockPos(BlockPos blockPos) {
+            if(blockPos.chunk != null) return blockPos.chunk.position;
+            ChunkPos c = ChunkPos(MathRealFloor(1.0f*blockPos.x / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.y / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.z / CHUNK_SIZE));
+            return c;
         }
 
         // finds what chunk this blockPos related to and returns local blockPos
