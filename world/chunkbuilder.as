@@ -57,7 +57,7 @@ namespace World {
                                 data.chunk.graphics[i][j][k] = Memory::GetReservedGraphics(data.chunk.graphics_id[i][j][k]);
                                 //if(i == 1 && j == 1 && k == 0) __debug("chunk " + data.chunk.position + " after id " + data.chunk.graphics_id[i][j][k]);
                                 SetSpecialEffectPositionWithZ(data.chunk.graphics[i][j][k], wc3Position.x * CHUNK_SIZE * BLOCK_SIZE + i * BLOCK_SIZE, wc3Position.y * CHUNK_SIZE * BLOCK_SIZE + j * BLOCK_SIZE, wc3Position.z * CHUNK_SIZE * BLOCK_SIZE + k*BLOCK_SIZE);
-                                SetSpecialEffectMaterialTexture(data.chunk.graphics[i][j][k], BlockID2Texture(data.chunk.blocks[i][j][k]), 0, 0);
+                                SetSpecialEffectMaterialTexture(data.chunk.graphics[i][j][k], BlockID2Texture(b), 0, 0);
                                 //if(b.debug) SetSpecialEffectVertexColour(b.graphics.get().eff, 255, 92, 92, 255);
                                 //else SetSpecialEffectVertexColour(b.graphics.get().eff, 255, 255, 255, 255);
                             } else {
@@ -111,12 +111,11 @@ namespace World {
         }
 
         void UpdateChunkBlockGraphics(BlockPos blockPos, bool updateNeighbors) {
-            //__debug("updating graphics " + blockPos);
+            if(blockPos.chunk == null) return;
             BlockID b = blockPos.chunk.blocks[blockPos.x][blockPos.y][blockPos.z];
             effect g = blockPos.chunk.graphics[blockPos.x][blockPos.y][blockPos.z];
             uint g_id = blockPos.chunk.graphics_id[blockPos.x][blockPos.y][blockPos.z];
-            
-            SetSpecialEffectTexture(blockPos.chunk.graphics[blockPos.x][blockPos.y][blockPos.z], BlockID2Texture(b), 0);
+
             if(b == BlockID::AIR || blockPos.chunk.world.IsBlockOccluded(blockPos.chunk.position, blockPos.x, blockPos.y, blockPos.z)) {
                 if(g_id != -1) {
                     Memory::FreeReservedGraphics(g, blockPos.chunk.graphics_id[blockPos.x][blockPos.y][blockPos.z]);
@@ -127,6 +126,7 @@ namespace World {
                 if(g_id == -1 && !blockPos.chunk.world.IsBlockOccluded(blockPos.chunk.position, blockPos.x, blockPos.y, blockPos.z)) {
                     ChunkPos wc3Position = blockPos.chunk.on_map_position;
                     blockPos.chunk.graphics[blockPos.x][blockPos.y][blockPos.z] = Memory::GetReservedGraphics(blockPos.chunk.graphics_id[blockPos.x][blockPos.y][blockPos.z]);
+                    SetSpecialEffectMaterialTexture(blockPos.chunk.graphics[blockPos.x][blockPos.y][blockPos.z], BlockID2Texture(b), 0, 0);
                     SetSpecialEffectPositionWithZ(blockPos.chunk.graphics[blockPos.x][blockPos.y][blockPos.z],    
                                                         wc3Position.x * CHUNK_SIZE * BLOCK_SIZE + blockPos.x * BLOCK_SIZE, 
                                                         wc3Position.y * CHUNK_SIZE * BLOCK_SIZE + blockPos.y * BLOCK_SIZE, 

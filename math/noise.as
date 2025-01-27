@@ -52,6 +52,14 @@ float grad3( int hash, float x, float y , float z ) {
     return (((h&1) != 0)? -u : u) + (((h&2) != 0)? -v : v);
 }
 
+float grad4( int hash, float x, float y, float z, float t ) {
+    int h = hash & 31;      // Convert low 5 bits of hash code into 32 simple
+    float u = h<24 ? x : y; // gradient directions, and compute dot product.
+    float v = h<16 ? y : z;
+    float w = h<8 ? z : t;
+    return (((h&1) != 0)? -u : u) + (((h&2) != 0)? -v : v) + (((h&4) != 0)? -w : w);
+}
+
 float noise2(float x, float y) {
     int ix0, iy0, ix1, iy1;
     float fx0, fy0, fx1, fy1;
@@ -134,4 +142,84 @@ float noise3( float x, float y, float z )
     n1 = Lerp( t, nx0, nx1 );
     
     return 0.936f * ( Lerp( s, n0, n1 ) );
+}
+
+float noise4( float x, float y, float z, float w )
+{
+    int ix0, iy0, iz0, iw0, ix1, iy1, iz1, iw1;
+    float fx0, fy0, fz0, fw0, fx1, fy1, fz1, fw1;
+    float s, t, r, q;
+    float nxyz0, nxyz1, nxy0, nxy1, nx0, nx1, n0, n1;
+
+    ix0 = FastFloor( x ); // Integer part of x
+    iy0 = FastFloor( y ); // Integer part of y
+    iz0 = FastFloor( z ); // Integer part of y
+    iw0 = FastFloor( w ); // Integer part of w
+    fx0 = x - ix0;        // Fractional part of x
+    fy0 = y - iy0;        // Fractional part of y
+    fz0 = z - iz0;        // Fractional part of z
+    fw0 = w - iw0;        // Fractional part of w
+    fx1 = fx0 - 1.0f;
+    fy1 = fy0 - 1.0f;
+    fz1 = fz0 - 1.0f;
+    fw1 = fw0 - 1.0f;
+    ix1 = ( ix0 + 1 ) & 0xff;  // Wrap to 0..255
+    iy1 = ( iy0 + 1 ) & 0xff;
+    iz1 = ( iz0 + 1 ) & 0xff;
+    iw1 = ( iw0 + 1 ) & 0xff;
+    ix0 = ix0 & 0xff;
+    iy0 = iy0 & 0xff;
+    iz0 = iz0 & 0xff;
+    iw0 = iw0 & 0xff;
+
+    q = Fade( fw0 );
+    r = Fade( fz0 );
+    t = Fade( fy0 );
+    s = Fade( fx0 );
+
+    nxyz0 = grad4(perm[ix0 + perm[iy0 + perm[iz0 + perm[iw0]]]], fx0, fy0, fz0, fw0);
+    nxyz1 = grad4(perm[ix0 + perm[iy0 + perm[iz0 + perm[iw1]]]], fx0, fy0, fz0, fw1);
+    nxy0 = Lerp( q, nxyz0, nxyz1 );
+        
+    nxyz0 = grad4(perm[ix0 + perm[iy0 + perm[iz1 + perm[iw0]]]], fx0, fy0, fz1, fw0);
+    nxyz1 = grad4(perm[ix0 + perm[iy0 + perm[iz1 + perm[iw1]]]], fx0, fy0, fz1, fw1);
+    nxy1 = Lerp( q, nxyz0, nxyz1 );
+        
+    nx0 = Lerp ( r, nxy0, nxy1 );
+
+    nxyz0 = grad4(perm[ix0 + perm[iy1 + perm[iz0 + perm[iw0]]]], fx0, fy1, fz0, fw0);
+    nxyz1 = grad4(perm[ix0 + perm[iy1 + perm[iz0 + perm[iw1]]]], fx0, fy1, fz0, fw1);
+    nxy0 = Lerp( q, nxyz0, nxyz1 );
+        
+    nxyz0 = grad4(perm[ix0 + perm[iy1 + perm[iz1 + perm[iw0]]]], fx0, fy1, fz1, fw0);
+    nxyz1 = grad4(perm[ix0 + perm[iy1 + perm[iz1 + perm[iw1]]]], fx0, fy1, fz1, fw1);
+    nxy1 = Lerp( q, nxyz0, nxyz1 );
+
+    nx1 = Lerp ( r, nxy0, nxy1 );
+
+    n0 = Lerp( t, nx0, nx1 );
+
+    nxyz0 = grad4(perm[ix1 + perm[iy0 + perm[iz0 + perm[iw0]]]], fx1, fy0, fz0, fw0);
+    nxyz1 = grad4(perm[ix1 + perm[iy0 + perm[iz0 + perm[iw1]]]], fx1, fy0, fz0, fw1);
+    nxy0 = Lerp( q, nxyz0, nxyz1 );
+        
+    nxyz0 = grad4(perm[ix1 + perm[iy0 + perm[iz1 + perm[iw0]]]], fx1, fy0, fz1, fw0);
+    nxyz1 = grad4(perm[ix1 + perm[iy0 + perm[iz1 + perm[iw1]]]], fx1, fy0, fz1, fw1);
+    nxy1 = Lerp( q, nxyz0, nxyz1 );
+
+    nx0 = Lerp ( r, nxy0, nxy1 );
+
+    nxyz0 = grad4(perm[ix1 + perm[iy1 + perm[iz0 + perm[iw0]]]], fx1, fy1, fz0, fw0);
+    nxyz1 = grad4(perm[ix1 + perm[iy1 + perm[iz0 + perm[iw1]]]], fx1, fy1, fz0, fw1);
+    nxy0 = Lerp( q, nxyz0, nxyz1 );
+        
+    nxyz0 = grad4(perm[ix1 + perm[iy1 + perm[iz1 + perm[iw0]]]], fx1, fy1, fz1, fw0);
+    nxyz1 = grad4(perm[ix1 + perm[iy1 + perm[iz1 + perm[iw1]]]], fx1, fy1, fz1, fw1);
+    nxy1 = Lerp( q, nxyz0, nxyz1 );
+
+    nx1 = Lerp ( r, nxy0, nxy1 );
+
+    n1 = Lerp( t, nx0, nx1 );
+
+    return 0.87f * ( Lerp( s, n0, n1 ) );
 }

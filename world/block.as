@@ -36,6 +36,16 @@ namespace World {
         }
     }
 
+    class ScheduledBlock {
+        BlockPos bpos;
+        BlockID id;
+
+        ScheduledBlock(BlockPos &in bpos, BlockID &in id) {
+            this.bpos = bpos;
+            this.id = id;
+        }
+    }
+
     string BlockID2Texture(BlockID id) {
         if(id == BlockID::GRASS) return "grassBlock.blp";
         if(id == BlockID::STONE) return "stoneBlock.blp";

@@ -17,7 +17,7 @@ const int CHUNK_POOL_SOFT_LIMIT = 8192;         // num. of chunks after which th
 const int CHUNK_POOL_HARD_LIMIT = 10000;        // max amount of chunks that can be allocated
 const int CHUNK_POOL_ENLARGE_AMOUNT = 256;      // amount of new chunks that allocated at runtime when chunk pool capacity's is almost full.
 
-const int MAX_GENERATED_BLOCKS_AT_ONCE = 32768;  // maximum amount of blocks that will be processed at once when generating chunk
+const int MAX_GENERATED_BLOCKS_AT_ONCE = 8192;  // maximum amount of blocks that will be processed at once when generating chunk
                                                 // (if exceed, generation will be paused and continued later)
 const int MAX_BUILT_BLOCKS_AT_ONCE = 8192;       // same as above but for building blocks (building = processing what faces should be shown and placing graphics)
 

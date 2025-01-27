@@ -135,20 +135,24 @@ namespace World {
             if(id != BlockID::AIR) {
                 BlockPos abpos = BlockPos(blockPos.x + position.x * CHUNK_SIZE, blockPos.y + position.y * CHUNK_SIZE, (blockPos.z - 1) + position.z * CHUNK_SIZE);
                 BlockPos bpos = world.GetBlockByAbsoluteBlockPos(abpos);
-                if(bpos.chunk.blocks[bpos.x][bpos.y][bpos.z] == BlockID::GRASS) {
-                    bpos.chunk.SetBlock(bpos, BlockID::DIRT);
+                if(bpos.chunk != null) {
+                    if(bpos.chunk.blocks[bpos.x][bpos.y][bpos.z] == BlockID::GRASS) {
+                        bpos.chunk.SetBlock(bpos, BlockID::DIRT);
+                    }
                 }
             }
 
             if(id == BlockID::GRASS) {
                 BlockPos abpos = BlockPos(blockPos.x + position.x * CHUNK_SIZE, blockPos.y + position.y * CHUNK_SIZE, (blockPos.z + 1) + position.z * CHUNK_SIZE);
                 BlockPos bpos = world.GetBlockByAbsoluteBlockPos(abpos);
-                if(bpos.chunk.blocks[bpos.x][bpos.y][bpos.z] != BlockID::AIR) {
-                    id = BlockID::DIRT;
-                    blocks[blockPos.x][blockPos.y][blockPos.z] = id;
+                if(bpos.chunk != null) {
+                    if(bpos.chunk.blocks[bpos.x][bpos.y][bpos.z] != BlockID::AIR) {
+                        id = BlockID::DIRT;
+                        blocks[blockPos.x][blockPos.y][blockPos.z] = id;
+                    }
                 }
             }
-
+            
             if(generationState >= ChunkGenerationState::BUILDING) {
                 Builder::UpdateChunkBlockGraphics(blockPos, true);
             }

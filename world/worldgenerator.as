@@ -11,6 +11,7 @@ namespace World {
             }
         }
 
+        int seed = 4467878;
         array<GeneratingChunkData> chunksBeingGenerated;
         
         int processedGeneratingBlocks = 0;
@@ -54,12 +55,15 @@ namespace World {
                             float gz = p.z*CHUNK_SIZE+k;
                             float ovNoise = OverworldNoise(gx, gy);
                             if(gz > ovNoise - 30.0f) {
-                                if(gz <= ovNoise) {
+                                if(gz < ovNoise) {
                                     data.chunk.blocks[i][j][k] = BlockID::GRASS;
                                     if(k > 0) {
                                         if(data.chunk.blocks[i][j][k-1] == BlockID::GRASS)
                                             data.chunk.blocks[i][j][k-1] = BlockID::DIRT;
                                     }
+                                }
+                                else if(gz == int(ovNoise)) {
+                                    MaybePlaceTree(gx, gy, gz);
                                 }
                                 else data.chunk.blocks[i][j][k] = BlockID::AIR;
                             } else {
@@ -79,8 +83,8 @@ namespace World {
                 chunksBeingGenerated.removeAt(chunk_iter);
                 chunk_iter--;
 
+                data.chunk.world.ProcessScheduledBlocks();
             }
-
         }
 
         // Initializes a new chunk and sends it to list of chunks to be generated later.
@@ -98,13 +102,64 @@ namespace World {
         }
 
         float OverworldNoise(float x, float y) {
-            float terrain1 = noise2(x * 0.01743f, y * 0.017212f) * 5.0f;
-            float terrain2 = noise2(x * 0.004023f, y * 0.00577809f) * 20.0f;
-            float terrain3 = noise2(x * 0.1053335f, y * 0.0949839f) * 4.233f;
-            return terrain1+terrain2+terrain3;
+            //float terrain1 = noise3(x * 0.01743f, y * 0.017212f, seed) * 5.0f;
+            float terrain2 = noise3(x * 0.002023f, y * 0.00257809f, seed) * 20.0f;
+            float terrain3 = noise3(x * 0.0553335f, y * 0.0449839f, seed) * 5.233f;
+            return terrain2+terrain3;
         }
         float UndergroundNoise(float x, float y, float z) {
-            return noise3(x * 0.0853f, y * 0.1007, z*0.0914403) * 16.2f;
+            return noise4(x * 0.0853f, y * 0.1007, z*0.0914403, seed) * 16.2f;
+        }
+
+        // places a block in generated chunk or schedules block placement for when chunk is generated
+        // used for structures generation
+        void PlaceOrScheduleBlock(int x, int y, int z, BlockID id) {
+            BlockPos bpos = Main::overworld.GetBlockByAbsoluteBlockPos(BlockPos(x, y, z));
+
+            if(bpos.chunk != null) {
+                if(bpos.chunk.generationState >= ChunkGenerationState::GENERATED) {
+                    bpos.chunk.SetBlock(bpos, id);
+                    return;
+                }
+            }
+
+            Main::overworld.ScheduleBlock(bpos, id);
+        }
+
+        void MaybePlaceTree(float x, float y, float z) {
+            float n = noise3(x * 0.0161f, y * 0.008883f, seed);
+            float n2 = noise3(x * 0.43f, y * 0.733f, seed*2);
+            if(n+n2 >= 0.75f) {
+                PlaceOrScheduleBlock(x, y, z , BlockID::LOG);
+                PlaceOrScheduleBlock(x, y, z + 1, BlockID::LOG);
+                PlaceOrScheduleBlock(x, y, z + 2, BlockID::LOG);
+                PlaceOrScheduleBlock(x, y, z + 3, BlockID::LOG);
+                PlaceOrScheduleBlock(x, y, z + 4, BlockID::LOG);
+                PlaceOrScheduleBlock(x, y, z + 5, BlockID::LOG);
+
+                PlaceOrScheduleBlock(x, y, z + 6, BlockID::LEAVES);
+
+                for(int i = -1; i <= 1; i++) {
+                    for(int j = -1; j <= 1; j++) {
+                        if(i == j) continue;
+                        PlaceOrScheduleBlock(x + i, y + j, z + 5, BlockID::LEAVES);
+                    }
+                }
+
+                for(int i = -2; i <= 2; i++) {
+                    for(int j = -2; j <= 2; j++) {
+                        if(i == 0 && j == 0) continue;
+                        PlaceOrScheduleBlock(x + i, y + j, z + 4, BlockID::LEAVES);
+                    }
+                }
+
+                for(int i = -2; i <= 2; i++) {
+                    for(int j = -2; j <= 2; j++) {
+                        if(i == 0 && j == 0) continue;
+                        PlaceOrScheduleBlock(x + i, y + j, z + 3, BlockID::LEAVES);
+                    }
+                }
+            }
         }
     }
 }

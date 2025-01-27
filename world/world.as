@@ -10,6 +10,7 @@ namespace World {
 
         array<Chunk@> builtChunks;
         array<Chunk@> requestedToBuildChunks;   // chunks that should be built
+        array<ScheduledBlock@> scheduledBlocks;
 
         Save::WorldSave@ worldSave;
 
@@ -173,6 +174,27 @@ namespace World {
             }
         }
 
+        // places block when chunk is ready
+        void ScheduleBlock(BlockPos bpos, BlockID id) {
+            scheduledBlocks.insertLast(@ScheduledBlock(bpos, id));
+        }
+
+        void ProcessScheduledBlocks() {
+            for(uint i = 0; i < scheduledBlocks.length(); i++) {
+                if(scheduledBlocks[i].bpos.chunk != null) {
+                    if(scheduledBlocks[i].bpos.chunk.generationState >= ChunkGenerationState::GENERATED) {
+                        scheduledBlocks[i].bpos.chunk.SetBlock(scheduledBlocks[i].bpos, scheduledBlocks[i].id);
+                        scheduledBlocks.removeAt(i--);
+                    }
+                } else {
+                    @scheduledBlocks[i].bpos.chunk = @GetChunkByBlockPos(scheduledBlocks[i].bpos);
+                    if(scheduledBlocks[i].bpos.chunk != null) {
+                        scheduledBlocks[i].bpos = GetBlockByAbsoluteBlockPos(scheduledBlocks[i].bpos);
+                    }
+                }
+            }
+        }
+
         // unloads all chunks that are generated but not built
         void UnloadUnrelevantChunksIfNecessary() {
             if(Memory::chunkPool.IsRequiresClearing()) {
@@ -289,7 +311,7 @@ namespace World {
                 //__debug("abspos to localpos: " + blockPos + " -> " + p);
                 return p;
             }
-            return BlockPos();
+            return blockPos;
         }
 
         bool lastAABBChunksGetWasSuccessful = false; // if false then some of the chunks was unloaded when we tried to get AABB chunks

@@ -9,7 +9,7 @@
 #include "mptest.as"
 
 namespace Main {
-    int renderDistance = 5;
+    int renderDistance = 4;
     int renderDistance_z = 3;
 
     //Memory::ReservedGraphics@ _debugRD;
