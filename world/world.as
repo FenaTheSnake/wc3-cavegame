@@ -43,7 +43,7 @@ namespace World {
             //}
         }
 
-        // unloads chunk's graphics, and, if neccessary, unloads chunk completely
+        // unloads chunk's graphics
         bool UnloadChunk(const ChunkPos &in position) {
             if(!loadedChunks.exists(position)) {
                 __debug("(UnloadChunk) Chunk can't be unloaded as it is not loaded: " + position);
@@ -300,7 +300,7 @@ namespace World {
         }
 
         // finds what chunk this blockPos related to and returns local blockPos
-        // ex. (9, 0, 0) -> (2, 0, 0)/chunk(1,0,0)
+        // ex. (9, 0, 0) -> (2, 0, 0)|chunk(1,0,0)
         BlockPos GetBlockByAbsoluteBlockPos(BlockPos blockPos) {
             ChunkPos c = ChunkPos(MathRealFloor(1.0f*blockPos.x / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.y / CHUNK_SIZE), MathRealFloor(1.0f*blockPos.z / CHUNK_SIZE));
             if(loadedChunks.exists(c) && cast<Chunk@>(loadedChunks[c]).generationState >= ChunkGenerationState::GENERATED) {
@@ -397,7 +397,11 @@ namespace World {
             }
 
             for(uint i = 0; i < requestedToBuildChunks.length(); i++) {
+                ChunkPos prev = requestedToBuildChunks[i].on_map_position;
                 requestedToBuildChunks[i].on_map_position = World::ChunkPosToWC3Position(requestedToBuildChunks[i].position);
+                if(prev != requestedToBuildChunks[i].on_map_position) {
+                    Builder::RepositionChunk(@requestedToBuildChunks[i]);
+                }
             }
         }
 
@@ -454,11 +458,14 @@ namespace World {
             result.y = (border_xy - (-cy % border_xy)) - border_xy / 2;
         }
 
-        float cz = (position.z + border_z / 2);
-        if(cz >= 0) {
-            result.z = (cz % border_z) - border_z / 2;
-        } else {
-            result.z = (border_z - (-cz % border_z)) - border_z / 2;
+        if(!placeOutOfBorder) {
+            //float cz = (position.z + border_z / 2);
+            result.z = ModRange(position.z, -(border_z/2), border_z/2);
+            // if(cz >= 0) {
+            //     result.z = (cz % border_z) - border_z / 2;
+            // } else {
+            //     result.z = (border_z - (-cz % border_z)) - border_z / 2;
+            // }
         }
 
         // if(!placeOutOfBorder) {
@@ -495,12 +502,27 @@ namespace World {
             if(playerPos.y >= near_border_xy && result.y >= -half_border_xy && result.y <= -near_border_xy) {
                 result.y = half_border_xy - (-half_border_xy - result.y);
             }
-            if(playerPos.z <= -near_border_z && result.z <= half_border_z && result.z >= near_border_z) {
-                result.z = -half_border_z - (half_border_z - result.z);
-            }
-            if(playerPos.z >= near_border_z && result.z >= -half_border_z && result.z <= -near_border_z) {
-                result.z = half_border_z - (-half_border_z - result.z);
-            }
+
+            float far_border_z = border_z + (BLOCK_SIZE * CHUNK_SIZE * 2);
+
+            float diff_z = position.z - Main::player.absolute_position.z;
+            float cz = playerPos.z + diff_z;
+            result.z = ModRange(cz, -(far_border_z/2), far_border_z/2);
+            // if(position.z == 2048) {
+            //     __debug(position.z + " -> " + result.z + " farborder " + far_border_z);
+            // }
+            // if(cz >= 0) {
+            //     result.z = (cz % far_border_z) - far_border_z / 2;
+            // } else {
+            //     result.z = (far_border_z - (-cz % far_border_z)) - far_border_z / 2;
+            // }
+
+            // if(playerPos.z <= -near_border_z && result.z <= half_border_z && result.z >= near_border_z) {
+            //     result.z = -half_border_z - (half_border_z - result.z);
+            // }
+            // if(playerPos.z >= near_border_z && result.z >= -half_border_z && result.z <= -near_border_z) {
+            //     result.z = half_border_z - (-half_border_z - result.z);
+            // }
 
             //result.z = position.z - playerChunkPos.z * CHUNK_SIZE * BLOCK_SIZE;
             //__debug("pos z: " + position.z + " | playerChunkPos z: " + (playerChunkPos.z * CHUNK_SIZE * BLOCK_SIZE) + " | result z: " + result.z);

@@ -115,6 +115,7 @@ namespace World {
         // used for structures generation
         void PlaceOrScheduleBlock(int x, int y, int z, BlockID id) {
             BlockPos bpos = Main::overworld.GetBlockByAbsoluteBlockPos(BlockPos(x, y, z));
+            processedGeneratingBlocks += 1;
 
             if(bpos.chunk != null) {
                 if(bpos.chunk.generationState >= ChunkGenerationState::GENERATED) {
@@ -127,7 +128,7 @@ namespace World {
         }
 
         void MaybePlaceTree(float x, float y, float z) {
-            float n = noise3(x * 0.0161f, y * 0.008883f, seed);
+            float n = noise3(x * 0.161f, y * 0.08883f, seed);
             float n2 = noise3(x * 0.43f, y * 0.733f, seed*2);
             if(n+n2 >= 0.75f) {
                 PlaceOrScheduleBlock(x, y, z , BlockID::LOG);
@@ -160,6 +161,8 @@ namespace World {
                     }
                 }
             }
+
+            processedGeneratingBlocks += 1;
         }
     }
 }

@@ -321,6 +321,11 @@ float Exp(float x) {
     return Pow(e, x);
 }
 
+float ModRange(float val, float lower, float upper) {
+    float range_size = upper - lower;
+    return ((val - lower) % range_size) + lower;
+}
+
 // alternative to lerp with correct deltaTime handling
 // https://www.youtube.com/watch?v=LSNQuFEDOyQ&t=2988s
 float expDecay(float a, float b, float decay, float dt)

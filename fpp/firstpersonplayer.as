@@ -39,6 +39,8 @@ namespace FPP {
         World::BlockID selectedBlock = World::BlockID::GRASS;
         int blockBreakCooldown = 0;
 
+        int debugKeysCooldown = 10;
+
         private World::ChunkPos _currentChunk;
 
         void Init(World::WorldInstance@ world, const Vector3 &in position) {
@@ -229,6 +231,14 @@ namespace FPP {
             if(IsKeyPressed(OSKEY_3)) selectedBlock = World::BlockID::STONE;
             if(IsKeyPressed(OSKEY_4)) selectedBlock = World::BlockID::LOG;
             if(IsKeyPressed(OSKEY_5)) selectedBlock = World::BlockID::LEAVES;
+
+            if(debugKeysCooldown > 0) debugKeysCooldown -= 1;
+            if(debugKeysCooldown == 0) {
+                if(IsKeyPressed(OSKEY_F4)) {
+                    world.UpdateBuiltChunksPositions();
+                    debugKeysCooldown = 10;
+                }
+            }
         }
     
         void Update() {

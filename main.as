@@ -60,6 +60,10 @@ namespace Main {
         //__debug("Requested To Build Chunks: " + overworld.requestedToBuildChunks.length() + "\nProcessing Generating Chunks: " + World::Generator::chunksBeingGenerated.length() + "\nProcessing Building Chunks: " + World::Builder::chunksBeingBuilt.length());
     }
 
+    void FuckMe() {
+        overworld.UpdateBuiltChunksPositions(); // shouldn't be here but idk for now how to do better
+    }
+
     void PeersSyncUpdate() {
         Multiplayer::SyncAllPeersPositions();
     }
@@ -119,14 +123,8 @@ namespace Main {
     }
 
     void PostInit() {
-        // for(int i = 0; i < 3; i++) {
-        //     for(int j = 0; j < 3; j++) {
-        //         __debug("noise " + i + " " + j + ": " + noise2(i * 12.8545f,j * -.92227f));
-        //     }
-        // }
+        // __debug("md " + ModRange(-2000, -3072, 3072));
         // return;
-
-        //return;
 
         HideWarcraftInterface();
         SetWidescreenState(true);
@@ -141,6 +139,7 @@ namespace Main {
         TimerStart(CreateTimer(), 0.01f, true, @Update);
         TimerStart(CreateTimer(), 0.05f, true, @LongUpdate);
         TimerStart(CreateTimer(), 0.20f, true, @PeersSyncUpdate);
+        TimerStart(CreateTimer(), 0.50f, true, @FuckMe);
         //TimerStart(CreateTimer(), 1.00f, true, @IWannaDie);
         //TimerStart(CreateTimer(), 5.00f, false, @Test);
 
