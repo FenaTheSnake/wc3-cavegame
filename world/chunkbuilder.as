@@ -99,9 +99,9 @@ namespace World {
                         if(chunk.graphics_id[i][j][k] == -1) continue;
     
                         if(chunk.blocks[i][j][k] != BlockID::AIR) {
-                            if(chunk.world.IsBlockOccluded(chunk.position, i, j, k)) {
-                                continue;
-                            }
+                            // if(chunk.world.IsBlockOccluded(chunk.position, i, j, k)) {
+                            //     continue;
+                            // }
 
                             SetSpecialEffectPositionWithZ(chunk.graphics[i][j][k], wc3Position.x * CHUNK_SIZE * BLOCK_SIZE + i * 128, wc3Position.y * CHUNK_SIZE * BLOCK_SIZE + j * 128, wc3Position.z * CHUNK_SIZE * BLOCK_SIZE + k*128);
                         }
@@ -116,6 +116,9 @@ namespace World {
             effect g = blockPos.chunk.graphics[blockPos.x][blockPos.y][blockPos.z];
             uint g_id = blockPos.chunk.graphics_id[blockPos.x][blockPos.y][blockPos.z];
 
+            if(g_id != -1) {
+                SetSpecialEffectMaterialTexture(blockPos.chunk.graphics[blockPos.x][blockPos.y][blockPos.z], BlockID2Texture(b), 0, 0);
+            }
             if(b == BlockID::AIR || blockPos.chunk.world.IsBlockOccluded(blockPos.chunk.position, blockPos.x, blockPos.y, blockPos.z)) {
                 if(g_id != -1) {
                     Memory::FreeReservedGraphics(g, blockPos.chunk.graphics_id[blockPos.x][blockPos.y][blockPos.z]);

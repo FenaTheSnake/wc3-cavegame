@@ -38,7 +38,7 @@ const float PLAYER_SNEAKING_SPEED = 0.4f;
 const float PLAYER_DEFAULT_FOV = 110.0f;
 const float PLAYER_SPRINTING_FOV = PLAYER_DEFAULT_FOV + 10.0f;
 
-const float PLAYER_JUMP_STRENGTH = 10.0f;
+const float PLAYER_JUMP_STRENGTH = 10.6667f;
 const float PLAYER_MAX_FALLING_SPEED = -24.0f;
 
 const float GRAVITY = 16;

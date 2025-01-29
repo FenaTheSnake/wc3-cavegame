@@ -14,6 +14,8 @@ namespace World {
 
         Save::WorldSave@ worldSave;
 
+        bool repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = false;
+
         // Loads given chunk if it is not loaded.
         Chunk@ RequestChunk(const ChunkPos &in position) {
             if(loadedChunks.exists(position)) {
@@ -380,6 +382,8 @@ namespace World {
         // updates already built chunks position
         // used when player loops back to reposition already generated chunks and do not generate them again
         void UpdateBuiltChunksPositions() {
+            __debug("Repositioning. Player abpos " + Main::player.absolute_position + " relative " + Main::player.position);
+
             for(uint i = 0; i < builtChunks.length(); i++) {
                 ChunkPos prev = builtChunks[i].on_map_position;
                 builtChunks[i].on_map_position = World::ChunkPosToWC3Position(builtChunks[i].position);
@@ -459,13 +463,13 @@ namespace World {
         }
 
         if(!placeOutOfBorder) {
-            //float cz = (position.z + border_z / 2);
-            result.z = ModRange(position.z, -(border_z/2), border_z/2);
-            // if(cz >= 0) {
-            //     result.z = (cz % border_z) - border_z / 2;
-            // } else {
-            //     result.z = (border_z - (-cz % border_z)) - border_z / 2;
-            // }
+            float cz = (position.z + border_z / 2);
+            //result.z = ModRange(position.z, -(border_z/2), border_z/2);
+            if(cz >= 0) {
+                result.z = (cz % border_z) - border_z / 2;
+            } else {
+                result.z = (border_z - (-cz % border_z)) - border_z / 2;
+            }
         }
 
         // if(!placeOutOfBorder) {

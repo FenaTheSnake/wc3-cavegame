@@ -7,6 +7,7 @@
 #include "fpp\\firstpersonplayer.as"
 #include "save\\worldsave.as"
 #include "mptest.as"
+#include "gui\\gui.as"
 
 namespace Main {
     int renderDistance = 4;
@@ -60,8 +61,15 @@ namespace Main {
         //__debug("Requested To Build Chunks: " + overworld.requestedToBuildChunks.length() + "\nProcessing Generating Chunks: " + World::Generator::chunksBeingGenerated.length() + "\nProcessing Building Chunks: " + World::Builder::chunksBeingBuilt.length());
     }
 
+    void GUIUpdate() {
+        player.UpdateBlockSelection();
+    }
+
     void FuckMe() {
-        overworld.UpdateBuiltChunksPositions(); // shouldn't be here but idk for now how to do better
+        if(overworld.repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk) {
+            overworld.UpdateBuiltChunksPositions();
+            overworld.repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = false;
+        }
     }
 
     void PeersSyncUpdate() {
@@ -130,6 +138,7 @@ namespace Main {
         SetWidescreenState(true);
         Multiplayer::Init();
         Memory::Init();
+        GUI::Init();
 
         @overworldSave = @Save::CreateWorldSaveWithFreeName("testWorld");
         @overworld.worldSave = @overworldSave;
@@ -138,6 +147,7 @@ namespace Main {
 
         TimerStart(CreateTimer(), 0.01f, true, @Update);
         TimerStart(CreateTimer(), 0.05f, true, @LongUpdate);
+        TimerStart(CreateTimer(), 0.15f, true, @GUIUpdate);
         TimerStart(CreateTimer(), 0.20f, true, @PeersSyncUpdate);
         TimerStart(CreateTimer(), 0.50f, true, @FuckMe);
         //TimerStart(CreateTimer(), 1.00f, true, @IWannaDie);

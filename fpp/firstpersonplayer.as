@@ -96,7 +96,8 @@ namespace FPP {
                 SetCameraField(CAMERA_FIELD_ZOFFSET, position.z, 0.0);
             }
             if(d > 2000.0f) {
-                world.UpdateBuiltChunksPositions();
+                //world.UpdateBuiltChunksPositions();
+                world.repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = true;
             }
         }
 
@@ -152,7 +153,7 @@ namespace FPP {
             if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT) && blockBreakCooldown == 0) {
                 Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
                 if(Collision::RaycastBlock(  @world, 
-                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + PLAYER_DEFAULT_EYES_POSITION),
+                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + eyePosition),
                                             GetCameraForward(),
                                             8,
                                             hit)) {
@@ -167,7 +168,7 @@ namespace FPP {
             if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_MIDDLE) && blockBreakCooldown == 0) {
                 Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
                 if(Collision::RaycastBlock(  @world, 
-                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + PLAYER_DEFAULT_EYES_POSITION),
+                                            Vector3(absolute_position.x, absolute_position.y, absolute_position.z + eyePosition),
                                             GetCameraForward(),
                                             8,
                                             hit)) {
@@ -369,6 +370,24 @@ namespace FPP {
             if(move.x != oldMove.x) motion.x = 0.0f;
             if(move.y != oldMove.y) motion.y = 0.0f;
             if(move.z != oldMove.z) motion.z = 0.0f;
+        }
+
+        void UpdateBlockSelection() {
+            Collision::BlockRaycastInfo hit = Collision::BlockRaycastInfo();
+            if(Collision::RaycastBlock(  @world, 
+                                        Vector3(absolute_position.x, absolute_position.y, absolute_position.z + eyePosition),
+                                        GetCameraForward(),
+                                        8,
+                                        hit)) {
+                // Vector3I placementPosition = Vector3I(  hit.position.chunk.position.x*CHUNK_SIZE + hit.position.x, 
+                //                                         hit.position.chunk.position.y*CHUNK_SIZE + hit.position.y, 
+                //                                         hit.position.chunk.position.z*CHUNK_SIZE + hit.position.z) + hit.face;
+                // World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(placementPosition.x, placementPosition.y, placementPosition.z));
+                GUI::SetBlockSelectionPosition(hit.position, hit.face);
+                
+            } else {
+                GUI::HideBlockSelection();
+            }
         }
     }
 }
