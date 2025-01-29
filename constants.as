@@ -57,6 +57,8 @@ const string PATH_CHUNKS_FILE = "chunks";
 const string PATH_WORLD_FILE = "world";
 const string SAVE_EXTENSION = ".txt";
 
+const string PATH_GLOBAL_WORLD_LIST = "worldlist";
+
 const int SAVE_CHUNK_MAX_AMOUNT = 0x00000FFF;             // max amount of chunks per chunkfile
 const int SAVE_CHUNK_SERIALIZATION_SIZE = 1550;     // size of each chunk serialized data in bytes (UNUSED)
 
@@ -65,8 +67,14 @@ const int SAVE_CHUNK_SERIALIZATION_SIZE = 1550;     // size of each chunk serial
 const string MP_CHUNK_SYNC_REQUEST_PREFIX = "csr";
 const string MP_CHUNK_SYNC_ANSWER_PREFIX = "csa";
 const string MP_SETBLOCK_PREFIX = "sb";
+const string MP_CREATEWORLD_PREFIX = "cw";
 
 const int MP_SYNCHT_POS_X = 0;
 const int MP_SYNCHT_POS_Y = 1;
 const int MP_SYNCHT_POS_Z = 2;
 const int MP_SYNCHT_FACING = 3;
+
+// == ATTENTIONS ==
+const string ATTENTION_WAITING_FOR_HOST = "Waiting for host to select a world...";
+const string ATTENTION_LOADING_CHUNKS = "Loading chunks...";
+const string ATTENTION_SAVING_WORLD = "Saving world...";

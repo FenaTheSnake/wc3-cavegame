@@ -6,14 +6,13 @@
 #include "collision\\collision.as"
 #include "fpp\\firstpersonplayer.as"
 #include "save\\worldsave.as"
+#include "save\\global.as"
 #include "mptest.as"
 #include "gui\\gui.as"
 
 namespace Main {
     int renderDistance = 4;
     int renderDistance_z = 3;
-
-    //Memory::ReservedGraphics@ _debugRD;
 
     // dynamically changed based on fps
     int toGenerateBlocks = MAX_GENERATED_BLOCKS_AT_ONCE;
@@ -27,10 +26,6 @@ namespace Main {
 
 
     void Update() {
-        // if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT)) __debug("left");
-        // if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_MIDDLE)) __debug("mid");
-        // if(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_RIGHT)) __debug("right");
-        // if(IsMouseKeyPressed(ConvertMouseButtonType(4))) __debug("5");
         player.Update();
     }
 
@@ -52,13 +47,6 @@ namespace Main {
         dbg += "Player Motion: " + player.motion + "\n"; 
         ClearTextMessages();
         DisplayTextToPlayer(GetLocalPlayer(), 0, 0, dbg);
-
-        // if(_debugRD !is null) {
-
-        //     __debug("debug rd: " + GetSpecialEffectX(_debugRD.eff) + " " + GetSpecialEffectY(_debugRD.eff) + " " + GetSpecialEffectZ(_debugRD.eff));
-        // }
-
-        //__debug("Requested To Build Chunks: " + overworld.requestedToBuildChunks.length() + "\nProcessing Generating Chunks: " + World::Generator::chunksBeingGenerated.length() + "\nProcessing Building Chunks: " + World::Builder::chunksBeingBuilt.length());
     }
 
     void GUIUpdate() {
@@ -76,72 +64,18 @@ namespace Main {
         Multiplayer::SyncAllPeersPositions();
     }
 
-    void Test() {
-        string s = cast<World::Chunk@>(overworld.loadedChunks[World::ChunkPos(0, 0, 0)]).Serialize();
-        __debug(s);
-    }
 
     void HideWarcraftInterface() {
         HideOriginFrames(true);
         EditBlackBorders(0, 0);
     }
 
-    // class ReferencedClass {
-    //     int doesntmatter;
-    // }
-    // class ClassInArray {
-    //     weakref<ReferencedClass> c;
-    // }
-    // class ClassWithBigArray {
-    //     //ReferencedClass@ rc;
-    //     //array<ClassInArray> bigArray(16*16*16*10);
-    //     int haha=0;
-
-    //     ClassWithBigArray() {
-    //         abc++;
-    //     }
-    // }
-
-    // void DoSomething(ClassWithBigArray@ cl) {
-    //     //cl.bigArray[34].c.get().doesntmatter = 1;
-    // }
-
-    // array<int> carr(4000000);
-    // array<int> carr2(400000);
-    // array<int> carr3(400000);
-    // int64 last = 0;
-    // int64 abc = 0;
-    // void Upd() {
-    //     // for(int i = last; i < last + 100000; i++) {
-    //     //     carr[i] = ClassWithBigArray();
-    //     //     //DoSomething(@c);
-    //     //     //abc += c.bigArray.length();
-    //     // }
-    //     // last += 100000;
-    //     // __debug(abc + "");
-    // }
-
-    void TestSave() {
-        overworld.Save();
-    }
-
-    trigger trig_onMouse;
-    void OnMouseKeyPressed() {
-
-    }
-
-    void PostInit() {
-        // __debug("md " + ModRange(-2000, -3072, 3072));
-        // return;
-
-        HideWarcraftInterface();
-        SetWidescreenState(true);
-        Multiplayer::Init();
+    void StartGame(Save::WorldSave@ save) {
         Memory::Init();
         GUI::Init();
 
-        @overworldSave = @Save::CreateWorldSaveWithFreeName("testWorld");
-        @overworld.worldSave = @overworldSave;
+        @overworldSave = @save;
+        @overworld.worldSave = @save;
 
         player.Init(@overworld, Vector3(-512, 512, 1024));
 
@@ -150,44 +84,24 @@ namespace Main {
         TimerStart(CreateTimer(), 0.15f, true, @GUIUpdate);
         TimerStart(CreateTimer(), 0.20f, true, @PeersSyncUpdate);
         TimerStart(CreateTimer(), 0.50f, true, @FuckMe);
-        //TimerStart(CreateTimer(), 1.00f, true, @IWannaDie);
-        //TimerStart(CreateTimer(), 5.00f, false, @Test);
-
-
-        for(int i = 0; i < 12; i++) {
-            trig_chatSave = CreateTrigger();
-            TriggerRegisterPlayerChatEvent(trig_chatSave, Player(i), "save", true);
-            TriggerAddAction(trig_chatSave, @TestSave);
-
-            // trig_onMouse = CreateTrigger();
-            // TriggerRegisterPlayerKeyEvent(trig_onMouse, Player(i), );
-            // TriggerAddAction(trig_onMouse, @TestSave);
-        }
     }
 
-    // class ReferencedClass {
-    //     int doesntmatter;
-    // }
-    // class ClassInArray {
-    //     weakref<ReferencedClass> c;
-    // }
-    // class ClassWithBigArray {
-    //     array<ClassInArray> bigArray(16*16*16*50);
-    // }
 
-    // void Upd() {
-    //     ClassWithBigArray c = ClassWithBigArray();
-    // }
+    void PostInit() {
+        HideWarcraftInterface();
+        SetWidescreenState(true);
+
+        Multiplayer::Init();
+
+        GUI::Menus::Attention::Init();
+        GUI::Menus::WorldCreation::Init();
+
+        if(Multiplayer::isHost) GUI::Menus::WorldCreation::Show();
+        else GUI::Menus::Attention::AddAttention(ATTENTION_WAITING_FOR_HOST);
+    }
 
     void Init() {
-        //__debug("test " + ((0x0000FFFE) & 0x0000FFFF));
-
         SetSkyModel("war3mapImported\\skyLight.mdx");
-
-        for(int i = 0; i < 12; i++) {
-            //fogmodifier f = CreateFogModifierRect(Player(i), FOG_OF_WAR_VISIBLE, GetWorldBounds(), true, false);
-            //FogModifierStart(f);
-        }
 
         FogEnable(false);
         FogMaskEnable(false);
@@ -203,7 +117,7 @@ namespace Main {
         TimerStart(CreateTimer(), 0.1f, false, @PostInit);
     }
 
-    void config() {
-
+    void Config() {
+        
     }
 }

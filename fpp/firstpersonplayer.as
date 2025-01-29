@@ -235,9 +235,15 @@ namespace FPP {
 
             if(debugKeysCooldown > 0) debugKeysCooldown -= 1;
             if(debugKeysCooldown == 0) {
-                if(IsKeyPressed(OSKEY_F4)) {
-                    world.UpdateBuiltChunksPositions();
-                    debugKeysCooldown = 10;
+                if(IsKeyPressed(OSKEY_F3)) {
+                    if(IsKeyPressed(OSKEY_R)) {
+                        world.UpdateBuiltChunksPositions();
+                        debugKeysCooldown = 20;
+                    }
+                    if(IsKeyPressed(OSKEY_S)) {
+                        world.Save();
+                        debugKeysCooldown = 20;
+                    }
                 }
             }
         }
@@ -329,9 +335,17 @@ namespace FPP {
             Collision::AABB expanded = paabb.expand(move.x, move.y, move.z);
             array<Collision::AABB> collisions = world.GetAABBCollisionBoxes(expanded);
             if(!world.lastAABBCollisionBoxesGetWasSuccessful) {
-                waitingForChunksToLoad = true;
+                if(!waitingForChunksToLoad) {
+                    waitingForChunksToLoad = true;
+                    GUI::Menus::Attention::AddAttention(ATTENTION_LOADING_CHUNKS);
+                }
                 return;
-            } else waitingForChunksToLoad = false;
+            } else {
+                if(waitingForChunksToLoad) {
+                    waitingForChunksToLoad = false;
+                    GUI::Menus::Attention::RemoveAttention(ATTENTION_LOADING_CHUNKS);
+                }
+            }
 
             Vector3 oldMove = move;
 
@@ -379,10 +393,6 @@ namespace FPP {
                                         GetCameraForward(),
                                         8,
                                         hit)) {
-                // Vector3I placementPosition = Vector3I(  hit.position.chunk.position.x*CHUNK_SIZE + hit.position.x, 
-                //                                         hit.position.chunk.position.y*CHUNK_SIZE + hit.position.y, 
-                //                                         hit.position.chunk.position.z*CHUNK_SIZE + hit.position.z) + hit.face;
-                // World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(placementPosition.x, placementPosition.y, placementPosition.z));
                 GUI::SetBlockSelectionPosition(hit.position, hit.face);
                 
             } else {

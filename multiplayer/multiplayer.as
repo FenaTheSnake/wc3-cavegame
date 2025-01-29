@@ -4,6 +4,7 @@
 namespace Multiplayer {
     bool isHost;
     trigger trig_SetBlock;
+    trigger trig_CreateWorld;
 
     hashtable syncHT;
     array<player> players;
@@ -13,6 +14,7 @@ namespace Multiplayer {
         syncHT = InitHashtable();
 
         trig_SetBlock = CreateTrigger();
+        trig_CreateWorld = CreateTrigger();
         for(int i = 0; i < 12; i++) {
             if(GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING) {
                 players.insertLast(Player(i));
@@ -20,10 +22,12 @@ namespace Multiplayer {
 
                 TriggerRegisterPlayerSyncEvent(trig_SetBlock, Player(i), MP_SETBLOCK_PREFIX, false);
                 TriggerRegisterPlayerSyncEvent(trig_SetBlock, Player(i), MP_SETBLOCK_PREFIX, true);
+                TriggerRegisterPlayerSyncEvent(trig_CreateWorld, Player(i), MP_CREATEWORLD_PREFIX, true);
             }
         }
         SetSpecialEffectPositionWithZ(peers[GetPlayerId(GetLocalPlayer())].model, -9999, -9999, -9999);
         TriggerAddAction(trig_SetBlock, @OnSetBlock);
+        TriggerAddAction(trig_CreateWorld, @OnCreateWorld);
     }
 
     void Update() {
@@ -48,6 +52,18 @@ namespace Multiplayer {
             //SetSpecialEffectAnimation(peers[GetPlayerId(GetTriggerPlayer())].model, "attack");
             peers[GetPlayerId(GetTriggerPlayer())].PlayAnimation("attack", 0.5f);
         }
+    }
+
+    void SendCreateNewWorld(string name) {
+        string data = name;
+        SendSyncData(MP_CREATEWORLD_PREFIX, data);
+    }
+
+    void OnCreateWorld() {
+        string data = GetTriggerSyncData();
+
+        Main::StartGame(@Save::CreateWorldSaveWithFreeName(data));
+        GUI::Menus::Attention::RemoveAttention(ATTENTION_WAITING_FOR_HOST);
     }
 }
 

@@ -5,5 +5,5 @@ void main() {
 }
 
 void config() {
-
+    Main::Config();
 }

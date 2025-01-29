@@ -1,3 +1,6 @@
+#include "menus\\worldcreation.as"
+#include "menus\\attention.as"
+
 namespace GUI {
     effect blockSelectionEffect;
 
@@ -13,7 +16,7 @@ namespace GUI {
         SetFrameBlendMode( texture, 0, BLEND_MODE_BLEND );
         ShowFrame( texture, true );
 
-        
+
 
         // BLOCK SELECTION EFFECT
         blockSelectionEffect = AddSpecialEffect("blockSelection.mdx", -9999, -9999);

@@ -92,6 +92,7 @@ namespace Save {
             TextFileWriteLine(worldFile, "chunks: " + lastSavedChunk);
             TextFileWriteLine(worldFile, "files: " + lastCreatedFile);
 
+            Global::AddWorldToList(name);
             __debug_section_end();
         }
 
