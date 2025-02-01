@@ -93,6 +93,9 @@ namespace World {
         // update chunk's graphics position to new chunk's position
         void RepositionChunk(Chunk@ chunk) {
             ChunkPos wc3Position = chunk.on_map_position;
+            if(chunk.position.x == 0 && chunk.position.y == -1 && chunk.position.z == 10) {
+                __debug("(RepositionChunk) chunk " + chunk.position + " onmappos " + chunk.on_map_position);
+            }
             for(uint i = 0; i < CHUNK_SIZE; i++) {
                 for(uint j = 0; j < CHUNK_SIZE; j++) {
                     for(uint k = 0; k < CHUNK_SIZE; k++) {

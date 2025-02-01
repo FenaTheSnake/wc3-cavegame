@@ -1,5 +1,6 @@
 #include "menus\\worldcreation.as"
 #include "menus\\attention.as"
+#include "debuginfo.as"
 
 namespace GUI {
     effect blockSelectionEffect;

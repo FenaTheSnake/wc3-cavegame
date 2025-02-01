@@ -26,7 +26,7 @@ namespace Multiplayer {
                     if(Main::overworld.loadedChunks.exists(req.position.chunk.position)) {
                         //World::Chunk@ chunk = Main::overworld.loadedChunks[req.position];
                         if(req.position.chunk.generationState >= World::ChunkGenerationState::GENERATED) {
-                            req.position.chunk.SetBlock(Main::overworld.GetBlockByAbsoluteBlockPos(req.position), req.blockID);
+                            req.position.chunk.SetBlock(Main::overworld.GetBlockByAbsoluteBlockPos(req.position), req.blockID, World::SetBlockReason::PLAYER);
                             requestedSetBlocks.removeAt(i--);
                         } else if(req.position.chunk.generationState < World::ChunkGenerationState::REQUESTED) {
                             requestedSetBlocks.removeAt(i--);

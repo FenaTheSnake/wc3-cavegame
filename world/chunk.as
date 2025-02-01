@@ -7,6 +7,10 @@ namespace World {
         BUILDING,       // is building (all block are initialized but not all are shown, is safe to work)
         BUILT           // all blocks are initialzied and shown. (safe to work)
     }
+    enum SetBlockReason {
+        PLAYER = 0,
+        NATURAL_GENERATION
+    }
 
     class ChunkPos {
         int x, y, z;
@@ -111,8 +115,8 @@ namespace World {
         array<Vector3I>@ GetAABBBlocks(Collision::AABB &in aabb) {
             array<Vector3I> b;
 
-            BlockPos lbd = AbsolutePositionToChunkBlockPos(Vector3(aabb.minX, aabb.minY, aabb.minZ));
-            BlockPos rfu = AbsolutePositionToChunkBlockPos(Vector3(aabb.maxX, aabb.maxY, aabb.maxZ));
+            BlockPos lbd = AbsolutePositionToChunkBlockPos(Vector3(aabb.minX, aabb.minY, aabb.minZ - 1));
+            BlockPos rfu = AbsolutePositionToChunkBlockPos(Vector3(aabb.maxX, aabb.maxY, aabb.maxZ + 1));
             //if(position.x == 3 && position.y == 3 && position.z == 3) __debug("lbd " + lbd + "; rfu " + rfu);
 
             for(int i = lbd.x; i <= rfu.x; i++) {
@@ -129,7 +133,7 @@ namespace World {
             return @b;
         }
 
-        void SetBlock(BlockPos blockPos, BlockID id) {
+        void SetBlock(BlockPos blockPos, BlockID id, SetBlockReason reason) {
             blocks[blockPos.x][blockPos.y][blockPos.z] = id;
 
             if(id != BlockID::AIR) {
@@ -137,7 +141,7 @@ namespace World {
                 BlockPos bpos = world.GetBlockByAbsoluteBlockPos(abpos);
                 if(bpos.chunk != null) {
                     if(bpos.chunk.blocks[bpos.x][bpos.y][bpos.z] == BlockID::GRASS) {
-                        bpos.chunk.SetBlock(bpos, BlockID::DIRT);
+                        bpos.chunk.SetBlock(bpos, BlockID::DIRT, World::SetBlockReason::NATURAL_GENERATION);
                     }
                 }
             }
@@ -157,7 +161,7 @@ namespace World {
                 Builder::UpdateChunkBlockGraphics(blockPos, true);
             }
 
-            wasModified = true;
+            if(reason == SetBlockReason::PLAYER) wasModified = true;
         }
 
         string Serialize() {
@@ -165,7 +169,8 @@ namespace World {
             for(int i = 0; i < CHUNK_SIZE; i++) {
                 for(int j = 0; j < CHUNK_SIZE; j++) {
                     for(int k = 0; k < CHUNK_SIZE; k++) {
-                        s += UInt2StringLengthOf3(blocks[i][j][k]); // add block id with fixed length of 3 with leading zeroes (ex. 1 -> 001)
+                        //s += UInt2StringLengthOf3(blocks[i][j][k]); // add block id with fixed length of 3 with leading zeroes (ex. 1 -> 001)
+                        s += IntToChar(blocks[i][j][k]+SAVE_BLOCK_INDEX_OFFSET);
                     }
                 }
             }
@@ -181,8 +186,8 @@ namespace World {
             for(int i = 0; i < CHUNK_SIZE; i++) {
                 for(int j = 0; j < CHUNK_SIZE; j++) {
                     for(int k = 0; k < CHUNK_SIZE; k++) {
-                        blocks[i][j][k] = BlockID(parseInt(ss[3].substr(c, 3)));
-                        c += 3;
+                        blocks[i][j][k] = BlockID((ss[3].substr(c, 1))[0]-SAVE_BLOCK_INDEX_OFFSET);
+                        c += 1;
                     }
                 }
             }

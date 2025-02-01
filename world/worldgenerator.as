@@ -42,19 +42,12 @@ namespace World {
 
                             ChunkPos@ p = @data.chunk.position;
 
-                            //if(p.x == 3 && p.y == 3 && p.z == 3) data.chunk.blocks[i][j][k] = Block(BlockID::GRASS);
-                            //else data.chunk.blocks[i][j][k] = Block(BlockID::AIR);
-
-                            // if( (p.x > -1 && p.y < 1 && p.z == 0 && k == 0) ||
-                            //     (p.x > -1 && p.y < 1 && p.z == -1))
-                            //     data.chunk.blocks[i][j][k] = Block(BlockID::GRASS);
-                            // else data.chunk.blocks[i][j][k] = Block(BlockID::AIR);
-
                             float gx = p.x*CHUNK_SIZE+i;
                             float gy = p.y*CHUNK_SIZE+j;
                             float gz = p.z*CHUNK_SIZE+k;
                             float ovNoise = OverworldNoise(gx, gy);
-                            if(gz > ovNoise - 30.0f) {
+
+                            if(gz < 80.0f && gz > ovNoise - 30.0f) {
                                 if(gz < ovNoise) {
                                     data.chunk.blocks[i][j][k] = BlockID::GRASS;
                                     if(k > 0) {
@@ -63,8 +56,14 @@ namespace World {
                                     }
                                 }
                                 else if(gz == int(ovNoise)) {
-                                    MaybePlaceTree(gx, gy, gz);
+                                    if(!MaybePlaceTree(gx, gy, gz)) {
+                                        data.chunk.blocks[i][j][k] = BlockID::AIR;
+                                    }
                                 }
+                                else data.chunk.blocks[i][j][k] = BlockID::AIR;
+                            } else if (gz >= 80.0f) {
+                                float csNoise = CloudSkyNoise(gx, gy, gz);
+                                if(csNoise >= 8.150f) data.chunk.blocks[i][j][k] = BlockID::CLOUD;
                                 else data.chunk.blocks[i][j][k] = BlockID::AIR;
                             } else {
                                 float ugNoise = UndergroundNoise(gx, gy, gz);
@@ -72,8 +71,6 @@ namespace World {
                                 else data.chunk.blocks[i][j][k] = BlockID::STONE;
                             }
 
-                            // if((i == 0 && j == 0) || (j == 0 && k == 0) || (i == 0 && k == 0)) data.chunk.blocks[i][j][k] = Block(BlockID::EARTH);
-                            // else data.chunk.blocks[i][j][k] = Block(BlockID::AIR);
 
                         }
                     }
@@ -110,6 +107,9 @@ namespace World {
         float UndergroundNoise(float x, float y, float z) {
             return noise4(x * 0.0853f, y * 0.1007, z*0.0914403, seed) * 16.2f;
         }
+        float CloudSkyNoise(float x, float y, float z) {
+            return noise4(x * 0.091031f, y * 0.0910701, z*0.08916483, seed) * 16.2f;
+        }
 
         // places a block in generated chunk or schedules block placement for when chunk is generated
         // used for structures generation
@@ -119,7 +119,7 @@ namespace World {
 
             if(bpos.chunk != null) {
                 if(bpos.chunk.generationState >= ChunkGenerationState::GENERATED) {
-                    bpos.chunk.SetBlock(bpos, id);
+                    bpos.chunk.SetBlock(bpos, id, World::SetBlockReason::NATURAL_GENERATION);
                     return;
                 }
             }
@@ -127,7 +127,7 @@ namespace World {
             Main::overworld.ScheduleBlock(bpos, id);
         }
 
-        void MaybePlaceTree(float x, float y, float z) {
+        bool MaybePlaceTree(float x, float y, float z) {
             float n = noise3(x * 0.161f, y * 0.08883f, seed);
             float n2 = noise3(x * 0.43f, y * 0.733f, seed*2);
             if(n+n2 >= 0.75f) {
@@ -160,9 +160,12 @@ namespace World {
                         PlaceOrScheduleBlock(x + i, y + j, z + 3, BlockID::LEAVES);
                     }
                 }
-            }
 
+                return true;
+            }
+            
             processedGeneratingBlocks += 1;
+            return false;
         }
     }
 }

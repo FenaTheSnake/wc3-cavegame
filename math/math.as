@@ -85,7 +85,7 @@ class Vector2 {
 }
 
 class Vector3 {
-    float x, y, z;
+    double x, y, z;
 
     Vector3() {
 
@@ -97,14 +97,15 @@ class Vector3 {
         z = other.z;
     }
 
-    Vector3(float x, float y, float z) {
+    Vector3(double x, double y, double z) {
         this.x = x;
         this.y = y;
         this.z = z;
     }
 
     bool opEquals(Vector3 other) {
-        return this.x == other.x and this.y == other.y and this.z == other.z;
+        //return this.x == other.x and this.y == other.y and this.z == other.z;
+        return DoubleIsEqual(this.x, other.x) && DoubleIsEqual(this.y, other.y) && DoubleIsEqual(this.z, other.z);
     }
 
     Vector3 &opAssign(const Vector3 &in other) {
@@ -128,7 +129,7 @@ class Vector3 {
         return this;
     }
 
-    Vector3 &opMulAssign(const float &in factor) {
+    Vector3 &opMulAssign(const double &in factor) {
         this.x *= factor;
         this.y *= factor;
         this.z *= factor;
@@ -146,26 +147,26 @@ class Vector3 {
         return Vector3(this.x - other.x, this.y - other.y, this.z - other.z);
     }
 
-    Vector3 opMul(const float &in factor) {
+    Vector3 opMul(const double &in factor) {
         return Vector3(this.x * factor, this.y * factor, this.z * factor);
     }
 
     string opImplConv() const { return R2S(this.x) + " " + R2S(this.y) + " " + R2S(this.z); }
 
-    float Length() {
+    double Length() {
         return SquareRoot(x*x + y*y + z*z);
     }
-    float SqrLength() {
+    double SqrLength() {
         return x*x + y*y + z*z;
     }
 
     Vector3 Normalized() {
         Vector3 result = this;
 
-        float length = Length();
+        double length = Length();
         if (length != 0.0f)
         {
-            float ilength = 1.0f/length;
+            double ilength = 1.0f/length;
 
             result.x *= ilength;
             result.y *= ilength;
@@ -195,6 +196,11 @@ class Vector3I {
         this.z = z;
     }
     Vector3I(float x, float y, float z) {
+        this.x = int(x);
+        this.y = int(y);
+        this.z = int(z);
+    }
+    Vector3I(double x, double y, double z) {
         this.x = int(x);
         this.y = int(y);
         this.z = int(z);
@@ -321,8 +327,8 @@ float Exp(float x) {
     return Pow(e, x);
 }
 
-float ModRange(float val, float lower, float upper) {
-    float range_size = upper - lower;
+double ModRange(double val, double lower, double upper) {
+    double range_size = upper - lower;
     return ((val - lower) % range_size) + lower;
 }
 
@@ -337,7 +343,7 @@ float Vector2Distance(Vector2 v1, const Vector2 &in v2) {
     return (v1-v2).SqrLength();
 }
 
-float Vector3Distance(Vector3 v1, const Vector3 &in v2) {
+double Vector3Distance(Vector3 v1, const Vector3 &in v2) {
     return (v1-v2).SqrLength();
 }
 
@@ -345,7 +351,7 @@ Vector3 Vector3CrossProduct(const Vector3 &in v1, const Vector3 &in v2) {
     return Vector3(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
 }
 
-float Vector3DotProduct(Vector3 v1, Vector3 v2)
+double Vector3DotProduct(Vector3 v1, Vector3 v2)
 {
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
 }
@@ -367,8 +373,26 @@ Vector3 GetCameraRight() {
     return Vector3CrossProduct(forward, up);
 }
 
-bool IsZero(float val) {
+// == functions comparing double with EPSILON accuracy
+
+bool IsZero(double val) {
     return val < EPSILON && val > -EPSILON;
+    //return val == 0.0;
+}
+bool DoubleIsEqual(double val1, double val2) {
+    return (val1 > (val2 - EPSILON)) && (val1 < (val2 + EPSILON));
+}
+bool DoubleIsLess(double val1, double val2) {
+    return (val1 < val2 - EPSILON);
+}
+bool DoubleIsLessEqual(double val1, double val2) {
+    return (val1 < val2 + EPSILON);
+}
+bool DoubleIsGreater(double val1, double val2) {
+    return (val1 > val2 + EPSILON);
+}
+bool DoubleIsGreaterEqual(double val1, double val2) {
+    return (val1 < val2 - EPSILON);
 }
 
 string UInt2StringLengthOf3(uint val) {

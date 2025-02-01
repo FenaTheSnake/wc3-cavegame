@@ -3,7 +3,8 @@ namespace Save {
     // represents a file with chunks data
     class ChunkFile {
         array<string> data;
-        textfilehandle file;
+        //string path;
+        textfilehandle file;  // causes desyncs, now using a single textfilehandle for all chunkfiles
 
         // used when saving in process
         bool isRead;        // keep tracking is file was read and modified
@@ -40,6 +41,7 @@ namespace Save {
             lastCreatedFile += 1;
             ChunkFile f = ChunkFile();
             f.file = TextFileOpen(pathRoot + PATH_CHUNKS_FILE + "-" + lastCreatedFile + SAVE_EXTENSION);
+            //f.path = pathRoot + PATH_CHUNKS_FILE + "-" + lastCreatedFile + SAVE_EXTENSION;
             chunksFiles.insertLast(@f);
 
             __debug("created new file, lastCreatedFile = " + lastCreatedFile);
@@ -65,6 +67,7 @@ namespace Save {
                 return;
             }
             if(!f.isRead) {
+                //Global::OpenChunkFile(f.path);
                 f.data = TextFileReadAllLines(f.file).split("\n");
                 f.data.resize(SAVE_CHUNK_MAX_AMOUNT);
                 f.isRead = true;
@@ -72,6 +75,30 @@ namespace Save {
 
             f.data[UINTID2ChunkID(lastSavedChunk)] = chunk.Serialize();
             savedChunks[chunk.position] = lastSavedChunk;
+            
+            lastSavedChunk += 1;
+        }
+
+        void AddSerializedChunk(string serializedChunk) {
+            // if this chunk belongs to a file that is not created yet
+            while(UINTID2ChunkFileID(lastSavedChunk) >= lastCreatedFile) {
+                CreateNewChunksFile();
+            }
+
+            ChunkFile@ f = chunksFiles[UINTID2ChunkFileID(lastSavedChunk)];
+            if(f == null) {
+                __debug("file is null, aborting");
+                return;
+            }
+            if(!f.isRead) {
+                f.data = TextFileReadAllLines(f.file).split("\n");
+                f.data.resize(SAVE_CHUNK_MAX_AMOUNT);
+                f.isRead = true;
+            }
+
+            f.data[UINTID2ChunkID(lastSavedChunk)] = serializedChunk;
+            array<string>@ ss = serializedChunk.split("|");
+            savedChunks[World::ChunkPos(parseInt(ss[0]), parseInt(ss[1]), parseInt(ss[2]))] = lastSavedChunk;
             
             lastSavedChunk += 1;
         }
@@ -149,6 +176,10 @@ namespace Save {
 
             __debug_section_end();
         } 
+
+        array<string>@ GetAllSavedChunks() {
+            return @savedChunks.getKeys();
+        }
     }
 
     // would return null if world with this name already exists
@@ -167,7 +198,10 @@ namespace Save {
     }
 
     string GetFreeWorldSaveName(string name) {
+        int tildaPos = name.findFirst("~");
+        if(tildaPos >= 1) name = name.substr(0, tildaPos);
         string newName = name;
+
         uint count = 1;
         while(TextFileExists(PATH_SAVES + newName + "\\" + PATH_WORLD_FILE + SAVE_EXTENSION)) {
             newName = name + "~" + count;
@@ -206,5 +240,9 @@ namespace Save {
         WorldSave@ worldSave = OpenWorldSave(name);
         if(worldSave != null) return @worldSave;
         return @CreateWorldSave(name);
+    }
+
+    bool IsWorldExists(string name) {
+        return TextFileExists(PATH_SAVES + name + "\\" + PATH_WORLD_FILE + SAVE_EXTENSION);
     }
 }

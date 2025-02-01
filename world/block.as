@@ -5,7 +5,8 @@ namespace World {
         DIRT,
         STONE,
         LOG,
-        LEAVES
+        LEAVES,
+        CLOUD
     }
 
     class BlockPos {
@@ -51,6 +52,7 @@ namespace World {
         if(id == BlockID::STONE) return "stoneBlock.blp";
         if(id == BlockID::LOG) return "logBlock.blp";
         if(id == BlockID::LEAVES) return "leavesBlock.blp";
+        if(id == BlockID::CLOUD) return "cloudBlock.blp";
         
         return "dirtBlock.blp";
     }

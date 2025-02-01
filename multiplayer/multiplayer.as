@@ -1,10 +1,14 @@
 #include "syncrequests.as"
 #include "peer.as"
+#include "worldsavesync.as"
 
 namespace Multiplayer {
     bool isHost;
     trigger trig_SetBlock;
     trigger trig_CreateWorld;
+    trigger trig_SyncWorld;
+    trigger trig_SyncChunk;
+    trigger trig_SyncWorldEnd;
 
     hashtable syncHT;
     array<player> players;
@@ -15,6 +19,9 @@ namespace Multiplayer {
 
         trig_SetBlock = CreateTrigger();
         trig_CreateWorld = CreateTrigger();
+        trig_SyncWorld = CreateTrigger();
+        trig_SyncChunk = CreateTrigger();
+        trig_SyncWorldEnd = CreateTrigger();
         for(int i = 0; i < 12; i++) {
             if(GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING) {
                 players.insertLast(Player(i));
@@ -23,11 +30,18 @@ namespace Multiplayer {
                 TriggerRegisterPlayerSyncEvent(trig_SetBlock, Player(i), MP_SETBLOCK_PREFIX, false);
                 TriggerRegisterPlayerSyncEvent(trig_SetBlock, Player(i), MP_SETBLOCK_PREFIX, true);
                 TriggerRegisterPlayerSyncEvent(trig_CreateWorld, Player(i), MP_CREATEWORLD_PREFIX, true);
+                TriggerRegisterPlayerSyncEvent(trig_SyncWorld, Player(i), MP_SYNCWORLD_PREFIX, true);
+                TriggerRegisterPlayerSyncEvent(trig_SyncChunk, Player(i), MP_SYNCCHUNK_PREFIX, true);
+                TriggerRegisterPlayerSyncEvent(trig_SyncWorldEnd, Player(i), MP_SYNCWORLD_END_PREFIX, true);
             }
         }
-        SetSpecialEffectPositionWithZ(peers[GetPlayerId(GetLocalPlayer())].model, -9999, -9999, -9999);
         TriggerAddAction(trig_SetBlock, @OnSetBlock);
         TriggerAddAction(trig_CreateWorld, @OnCreateWorld);
+        TriggerAddAction(trig_SyncWorld, @OnSyncWorld);
+        TriggerAddAction(trig_SyncChunk, @WorldSaveSync::OnSyncChunk);
+        TriggerAddAction(trig_SyncWorldEnd, @WorldSaveSync::OnSyncWorldEnd);
+
+        SetSpecialEffectPositionWithZ(peers[GetPlayerId(GetLocalPlayer())].model, -9999, -9999, -9999);
     }
 
     void Update() {
@@ -64,6 +78,19 @@ namespace Multiplayer {
 
         Main::StartGame(@Save::CreateWorldSaveWithFreeName(data));
         GUI::Menus::Attention::RemoveAttention(ATTENTION_WAITING_FOR_HOST);
+    }
+
+    void SendSyncWorld(string name) {
+        string data = name;
+        SendSyncData(MP_SYNCWORLD_PREFIX, data);
+    }
+
+    void OnSyncWorld() {
+        string data = GetTriggerSyncData();
+
+        if(!isHost) GUI::Menus::Attention::RemoveAttention(ATTENTION_WAITING_FOR_HOST);
+        GUI::Menus::Attention::AddAttention(ATTENTION_SYNCING_WORLD, ATTENTION_SYNCING_WORLD_TEXT);
+        WorldSaveSync::SyncWorldSave(data);
     }
 }
 

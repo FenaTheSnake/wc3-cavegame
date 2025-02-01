@@ -1,11 +1,11 @@
 namespace Collision {
     class AABB {
-        float minX;
-        float minY;
-        float minZ;
-        float maxX;
-        float maxY;
-        float maxZ;
+        double minX;
+        double minY;
+        double minZ;
+        double maxX;
+        double maxY;
+        double maxZ;
 
         AABB() {}
         // AABB(Vector3 min, Vector3 max) {
@@ -15,14 +15,14 @@ namespace Collision {
         //     this.pos = this.min + this.max * 0.5;
         //     this.size = this.max - this.min;
         // }
-        AABB(float x1, float y1, float z1, float x2, float y2, float z2)
+        AABB(double x1, double y1, double z1, double x2, double y2, double z2)
         {
-            this.minX = MathRealMin(x1, x2);
-            this.minY = MathRealMin(y1, y2);
-            this.minZ = MathRealMin(z1, z2);
-            this.maxX = MathRealMax(x1, x2);
-            this.maxY = MathRealMax(y1, y2);
-            this.maxZ = MathRealMax(z1, z2);
+            this.minX = (x1 < x2) ? x1 : x2;
+            this.minY = (y1 < y2) ? y1 : y2;
+            this.minZ = (z1 < z2) ? z1 : z2;
+            this.maxX = (x1 > x2) ? x1 : x2;
+            this.maxY = (y1 > y2) ? y1 : y2;
+            this.maxZ = (z1 > z2) ? z1 : z2;
         }
         AABB(Vector3 min, Vector3 max) {
             this.minX = min.x;
@@ -42,38 +42,38 @@ namespace Collision {
 
         string opImplConv() const { return "[" + this.minX + "," + this.minY + "," + this.minZ + "] [" + this.maxX + "," + this.maxY + "," + this.maxZ + "]"; }
 
-        AABB expand(float x, float y, float z)
+        AABB expand(double x, double y, double z)
         {
-            float d0 = this.minX;
-            float d1 = this.minY;
-            float d2 = this.minZ;
-            float d3 = this.maxX;
-            float d4 = this.maxY;
-            float d5 = this.maxZ;
+            double d0 = this.minX;
+            double d1 = this.minY;
+            double d2 = this.minZ;
+            double d3 = this.maxX;
+            double d4 = this.maxY;
+            double d5 = this.maxZ;
 
-            if (x < 0.0f)
+            if (x < 0.0)
             {
                 d0 += x;
             }
-            else if (x > 0.0f)
+            else if (x > 0.0)
             {
                 d3 += x;
             }
 
-            if (y < 0.0f)
+            if (y < 0.0)
             {
                 d1 += y;
             }
-            else if (y > 0.0f)
+            else if (y > 0.0)
             {
                 d4 += y;
             }
 
-            if (z < 0.0f)
+            if (z < 0.0)
             {
                 d2 += z;
             }
-            else if (z > 0.0f)
+            else if (z > 0.0)
             {
                 d5 += z;
             }
@@ -91,22 +91,24 @@ namespace Collision {
             return this.offset(v.x, v.y, v.z);
         }
 
-        float calculateXOffset(AABB other, float offsetX)
+        double calculateXOffset(AABB other, double offsetX)
         {
-            if (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ && other.minZ < this.maxZ)
+            if (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ+EPSILON && other.minZ < this.maxZ-EPSILON)
             {
-                if (offsetX > EPSILON && other.maxX <= this.minX)
+                if (offsetX > EPSILON && (DoubleIsEqual(other.maxX, this.minX) || other.maxX < this.minX))
+                //if (offsetX > EPSILON && other.maxX <= this.minX)
                 {
-                    float d1 = this.minX - other.maxX;
+                    double d1 = this.minX - other.maxX;
 
                     if (d1 < offsetX)
                     {
                         offsetX = d1;
                     }
                 }
-                else if (offsetX < EPSILON && other.minX >= this.maxX)
+                else if (offsetX < EPSILON && (DoubleIsEqual(other.minX, this.maxX) || other.minX > this.maxX))
+                //else if (offsetX < EPSILON && other.minX >= this.maxX)
                 {
-                    float d0 = this.maxX - other.minX;
+                    double d0 = this.maxX - other.minX;
 
                     if (d0 > offsetX)
                     {
@@ -127,24 +129,25 @@ namespace Collision {
         * in the Y dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the
         * calculated offset.  Otherwise return the calculated offset.
         */
-        double calculateYOffset(AABB other, float offsetY)
+        double calculateYOffset(AABB other, double offsetY)
         {
-            if (other.maxX > this.minX && other.minX < this.maxX && other.maxZ > this.minZ && other.minZ < this.maxZ)
+            if (other.maxX > this.minX && other.minX < this.maxX && other.maxZ > this.minZ+EPSILON && other.minZ < this.maxZ-EPSILON)
             {
-                //__debug("this aabb " + this + " ; other aabb " + other + " ; offsetY" + offsetY);
-                if (offsetY > EPSILON && other.maxY <= this.minY)
+                if (offsetY > EPSILON && (DoubleIsEqual(other.maxY, this.minY) || other.maxY < this.minY))
+                //if (offsetY > EPSILON && other.maxY <= this.minY)
                 {
-                    float d1 = this.minY - other.maxY;
+                    double d1 = this.minY - other.maxY;
 
                     if (d1 < offsetY)
                     {
                         offsetY = d1;
                     }
                 }
-                else if (offsetY < EPSILON && other.minY >= this.maxY)
+                else if (offsetY < EPSILON && (DoubleIsEqual(other.minY, this.maxY) || other.minY > this.maxY))
+                //else if (offsetY < EPSILON && other.minY >= this.maxY)
                 {
                     
-                    float d0 = this.maxY - other.minY;
+                    double d0 = this.maxY - other.minY;
 
                     if (d0 > offsetY)
                     {
@@ -165,22 +168,22 @@ namespace Collision {
         * in the Z dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the
         * calculated offset.  Otherwise return the calculated offset.
         */
-        float calculateZOffset(AABB other, float offsetZ)
+        double calculateZOffset(AABB other, double offsetZ)
         {
             if (other.maxX > this.minX && other.minX < this.maxX && other.maxY > this.minY && other.minY < this.maxY)
             {
-                if (offsetZ > EPSILON && other.maxZ <= this.minZ)
+                if (offsetZ > 0.0 && (DoubleIsEqual(other.maxZ, this.minZ) || other.maxZ < this.minZ))
                 {
-                    float d1 = this.minZ - other.maxZ;
+                    double d1 = this.minZ - other.maxZ;
 
                     if (d1 < offsetZ)
                     {
                         offsetZ = d1;
                     }
                 }
-                else if (offsetZ < EPSILON && other.minZ >= this.maxZ)
+                else if (offsetZ < 0.0 && (DoubleIsEqual(other.minZ, this.maxZ) || other.minZ > this.maxZ))
                 {
-                    float d0 = this.maxZ - other.minZ;
+                    double d0 = this.maxZ - other.minZ;
 
                     if (d0 > offsetZ)
                     {

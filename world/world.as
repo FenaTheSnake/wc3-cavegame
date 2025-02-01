@@ -101,6 +101,44 @@ namespace World {
             }
         }
 
+        // if player's absolute position has changed a lot we need to
+        // unload all graphics from existing chunks that are far based on abs pos
+        // because UpdateBuiltChunks unloads only based on local position (bound to wc3 map bounds)
+        // so you may teleport far away but if your local position hasn't changed a lot
+        // you will see graphical artifacts from previous position's chunks. 
+        // This attempts to fix it. Called only when player's abspos changing by huge value.
+        void UnloadChunksGraphicsBasedOnAbsolutePosition(const ChunkPos &in center) {
+            for(uint i = 0; i < builtChunks.length(); i++) {
+                if(!(builtChunks[i].position.x > center.x - Main::renderDistance && builtChunks[i].position.x < center.x + Main::renderDistance &&
+                     builtChunks[i].position.y > center.y - Main::renderDistance && builtChunks[i].position.y < center.y + Main::renderDistance &&
+                     builtChunks[i].position.z > center.z - Main::renderDistance_z && builtChunks[i].position.z < center.z + Main::renderDistance_z)) {
+                    if(UnloadChunk(builtChunks[i].position)) {
+                        i--;
+                    }
+                }
+            }
+            for(uint i = 0; i < requestedToBuildChunks.length(); i++) {
+                if(!(requestedToBuildChunks[i].position.x > center.x - Main::renderDistance && requestedToBuildChunks[i].position.x < center.x + Main::renderDistance &&
+                     requestedToBuildChunks[i].position.y > center.y - Main::renderDistance && requestedToBuildChunks[i].position.y < center.y + Main::renderDistance &&
+                     requestedToBuildChunks[i].position.z > center.z - Main::renderDistance_z && requestedToBuildChunks[i].position.z < center.z + Main::renderDistance_z)) {
+                    //requestedToBuildChunks[i].generationState = ChunkGenerationState::GENERATED;
+                    requestedToBuildChunks.removeAt(i);
+                    i--;
+                }
+            }
+
+            for(uint i = 0; i < Builder::chunksBeingBuilt.length(); i++) {
+                if(!(Builder::chunksBeingBuilt[i].chunk.position.x > center.x - Main::renderDistance && Builder::chunksBeingBuilt[i].chunk.position.x < center.x + Main::renderDistance &&
+                     Builder::chunksBeingBuilt[i].chunk.position.y > center.y - Main::renderDistance && Builder::chunksBeingBuilt[i].chunk.position.y < center.y + Main::renderDistance &&
+                     Builder::chunksBeingBuilt[i].chunk.position.z > center.z - Main::renderDistance_z && Builder::chunksBeingBuilt[i].chunk.position.z < center.z + Main::renderDistance_z)) {
+                    Builder::chunksBeingBuilt[i].chunk.UnloadGraphics();
+                    Builder::chunksBeingBuilt[i].chunk.generationState = ChunkGenerationState::GENERATED;
+                    Builder::chunksBeingBuilt.removeAt(i);
+                    i--;
+                }
+            }
+        }
+
         // unloads chunks and builds new according to provided position
         // localCenter should be provided as position in wc3's coordinates (bound to map limits)
         // so you can sure that all chunks that are not visible by player have graphics unloaded.
@@ -155,6 +193,7 @@ namespace World {
                 }
             }
 
+            repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = true; // AAAAAAAAAAAA I DONT KNOW
             //__debug("Requested / Unloaded chunks: " + _debug_loaded + " / " + _debug_unloaded);
             //__debug("ReservedGraphics usage: " + Memory::usedGraphics.length() + "/" + RESERVE_GRAPHICS_COUNT);
             //__debug("ChunkPool usage: " + Memory::chunkPool.usedChunks.length() + "/" + CHUNK_POOL_MAX_SIZE);
@@ -185,7 +224,9 @@ namespace World {
             for(uint i = 0; i < scheduledBlocks.length(); i++) {
                 if(scheduledBlocks[i].bpos.chunk != null) {
                     if(scheduledBlocks[i].bpos.chunk.generationState >= ChunkGenerationState::GENERATED) {
-                        scheduledBlocks[i].bpos.chunk.SetBlock(scheduledBlocks[i].bpos, scheduledBlocks[i].id);
+                        scheduledBlocks[i].bpos.chunk.SetBlock(scheduledBlocks[i].bpos, scheduledBlocks[i].id, World::SetBlockReason::NATURAL_GENERATION);
+                        scheduledBlocks.removeAt(i--);
+                    } else if(scheduledBlocks[i].bpos.chunk.generationState < ChunkGenerationState::GENERATING){
                         scheduledBlocks.removeAt(i--);
                     }
                 } else {
@@ -322,8 +363,8 @@ namespace World {
             array<Chunk@> chunks;
             lastAABBChunksGetWasSuccessful = true;
 
-            ChunkPos lbd = AbsolutePositionToChunkPos(Vector3(aabb.minX, aabb.minY, aabb.minZ));
-            ChunkPos rfu = AbsolutePositionToChunkPos(Vector3(aabb.maxX, aabb.maxY, aabb.maxZ));
+            ChunkPos lbd = AbsolutePositionToChunkPos(Vector3(aabb.minX, aabb.minY, aabb.minZ - 1));
+            ChunkPos rfu = AbsolutePositionToChunkPos(Vector3(aabb.maxX, aabb.maxY, aabb.maxZ + 1));
 
             for(int i = lbd.x; i <= rfu.x; i++) {
                 for(int j = lbd.y; j <= rfu.y; j++) {
@@ -511,7 +552,13 @@ namespace World {
 
             float diff_z = position.z - Main::player.absolute_position.z;
             float cz = playerPos.z + diff_z;
+
             result.z = ModRange(cz, -(far_border_z/2), far_border_z/2);
+            if(govno) {
+                __debug("abspos " + position + " player abspos " + Main::player.absolute_position + " cz " + cz);
+                __debug("result: " + result);
+            }
+            
             // if(position.z == 2048) {
             //     __debug(position.z + " -> " + result.z + " farborder " + far_border_z);
             // }
@@ -537,10 +584,17 @@ namespace World {
         return result;
     }
 
+    bool govno = false;
     ChunkPos ChunkPosToWC3Position(const ChunkPos &in position) {
+        if(position.x == 0 && position.y == -1 && position.z == 10) govno = true;
         Vector3 v = AbsolutePositionToWC3Position(Vector3(position.x * CHUNK_SIZE * BLOCK_SIZE, position.y * CHUNK_SIZE * BLOCK_SIZE, position.z * CHUNK_SIZE * BLOCK_SIZE), true);
+        if(position.x == 0 && position.y == -1 && position.z == 10) {
+            ChunkPos c = ChunkPos(MathRealRound(v.x / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.y / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.z / BLOCK_SIZE / CHUNK_SIZE));
+            __debug("(ChunkPos2WC3) chunk " + position + " to " + c);
+            govno = false;
+        }
         //__debug("chunkPosToWC3 " + position + " -> " + ChunkPos(int(v.x / BLOCK_SIZE / CHUNK_SIZE), int(v.y / BLOCK_SIZE / CHUNK_SIZE), int(v.z / BLOCK_SIZE / CHUNK_SIZE)));
-        return ChunkPos(int(v.x / BLOCK_SIZE / CHUNK_SIZE), int(v.y / BLOCK_SIZE / CHUNK_SIZE), int(v.z / BLOCK_SIZE / CHUNK_SIZE));
+        return ChunkPos(MathRealRound(v.x / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.y / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.z / BLOCK_SIZE / CHUNK_SIZE));
     }
 
     // border chunk is a chunk that placed beyond playable border to imitate seamless infinite world

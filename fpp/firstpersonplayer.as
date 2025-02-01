@@ -14,9 +14,12 @@ namespace FPP {
 
         Vector3 motion;
 
-        float stepHeight = PLAYER_STEPHEIGHT;
+        double stepHeight = PLAYER_STEPHEIGHT;
         bool isSneaking;
         bool isSprinting;
+
+        bool isFlying;
+        float doubleJumpCooldown = 0;
 
         bool onGround;
         bool isCollidedHorizontally;
@@ -41,6 +44,9 @@ namespace FPP {
 
         int debugKeysCooldown = 10;
 
+        // pos of block looking at.
+        Vector3I lookingAt;
+
         private World::ChunkPos _currentChunk;
 
         void Init(World::WorldInstance@ world, const Vector3 &in position) {
@@ -58,7 +64,7 @@ namespace FPP {
         }
 
         void SetPosition(const Vector3 &in newPosition) {
-
+            Vector3 old_abs = absolute_position;
             absolute_position = newPosition;
             // Vector3 pmin = Vector3(absolute_position.x - PLAYER_SIZE, absolute_position.y - PLAYER_SIZE, absolute_position.z - PLAYER_HEIGHT);
             // Vector3 pmax = Vector3(absolute_position.x + PLAYER_SIZE, absolute_position.y + PLAYER_SIZE, absolute_position.z + PLAYER_HEIGHT);
@@ -72,31 +78,36 @@ namespace FPP {
             Vector3 oldPos = position;
             position = World::AbsolutePositionToWC3Position(newPosition, false);
 
-            if(Vector3Distance(oldPos, position) > 1000.0f) {
+            double d = Vector3Distance(oldPos, position);
+            double absd = Vector3Distance(old_abs, absolute_position);
+            if(d > 1000.0) {
                 SetCameraPosition(position.x, position.y);
                 SetCameraField(CAMERA_FIELD_ZOFFSET, position.z, 0.0);
             }
-
+            if(absd > 3000.0) {
+                world.UnloadChunksGraphicsBasedOnAbsolutePosition(World::AbsolutePositionToChunkPos(absolute_position));
+                world.UpdateBuiltChunksPositions();
+            }
         }
 
         void UpdateMovement() {
             Move(motion);
             if(waitingForChunksToLoad) return;
 
-            motion.x = motion.x * 0.85f;
-            motion.y = motion.y * 0.85f;
-            //motion.z = motion.z * 0.8f;
+            motion.x = motion.x * 0.85;
+            motion.y = motion.y * 0.85;
+            if(isFlying) motion.z = motion.z * 0.85f;
 
             Vector3 oldPos = position;
             position = World::AbsolutePositionToWC3Position(absolute_position, false);
 
-            float d = Vector3Distance(oldPos, position);
-            if(d > 500.0f) {
+            double d = Vector3Distance(oldPos, position);
+            if(d > 500.0) {
                 SetCameraPosition(position.x, position.y);
                 SetCameraField(CAMERA_FIELD_ZOFFSET, position.z, 0.0);
             }
-            if(d > 2000.0f) {
-                //world.UpdateBuiltChunksPositions();
+            if(d > 2000.0) {
+                world.UpdateBuiltChunksPositions();
                 world.repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = true;
             }
         }
@@ -110,7 +121,7 @@ namespace FPP {
         void UpdateWC3Camera() {
             SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, 0.0f, cameraTime);
             SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, fov, cameraTime);
-            SetCameraField(CAMERA_FIELD_FARZ, 7000.0f, cameraTime);
+            SetCameraField(CAMERA_FIELD_FARZ, GetFPS()*(7000.0f/60.0f), cameraTime);
             SetCameraField(CAMERA_FIELD_NEARZ, 16.0f, cameraTime);
 
             Vector2 direction = Vector2(Cos(Deg2Rad(currentFacing.x)), Sin(Deg2Rad(currentFacing.x)));
@@ -159,7 +170,7 @@ namespace FPP {
                                             hit)) {
                     World::Chunk@ chunk = @hit.position.chunk;
                     World::BlockPos p = World::BlockPos(@chunk, hit.position.x, hit.position.y, hit.position.z);
-                    chunk.SetBlock(p, World::BlockID::AIR);
+                    chunk.SetBlock(p, World::BlockID::AIR, World::SetBlockReason::PLAYER);
                     Multiplayer::SendSetBlock(p, World::BlockID::AIR);
                     
                 }
@@ -177,7 +188,7 @@ namespace FPP {
                                                             hit.position.chunk.position.y*CHUNK_SIZE + hit.position.y, 
                                                             hit.position.chunk.position.z*CHUNK_SIZE + hit.position.z) + hit.face;
                     World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(placementPosition.x, placementPosition.y, placementPosition.z));
-                    bpos.chunk.SetBlock(bpos, selectedBlock);
+                    bpos.chunk.SetBlock(bpos, selectedBlock, World::SetBlockReason::PLAYER);
                     Multiplayer::SendSetBlock(bpos, selectedBlock);
                     
                 }
@@ -200,12 +211,23 @@ namespace FPP {
             Vector3 movement = (fwd * y + right * x);
             movement = Vector3(movement.x * 100, movement.y * 100, 0).Normalized() * speed;
 
-            if(IsKeyPressed(OSKEY_SPACE) && onGround) {
-                movement.z = PLAYER_JUMP_STRENGTH;
-                movement.x *= 3.0f;
-                movement.y *= 3.0f;
+            if(doubleJumpCooldown > 0.0) doubleJumpCooldown -= TIME_PLAYER_UPDATE;
+            if(IsKeyPressed(OSKEY_SPACE)) {
+                doubleJumpCooldown -= 0.05f; // if we hold space then we don't want to enable/disable flying mode
+                if(onGround) {
+                    movement.z = PLAYER_JUMP_STRENGTH;
+                    movement.x *= 3.0f;
+                    movement.y *= 3.0f;
+                }
+                if(isFlying) {
+                    motion.z += PLAYER_DEFAULT_SPEED * 1.5f;
+                }
             }
             if(IsKeyPressed(OSKEY_SHIFT)) {
+                if(isFlying) {
+                    motion.z -= PLAYER_DEFAULT_SPEED * 1.5f;
+                }
+
                 isSneaking = true;
                 isSprinting = false;
             } else {
@@ -232,6 +254,7 @@ namespace FPP {
             if(IsKeyPressed(OSKEY_3)) selectedBlock = World::BlockID::STONE;
             if(IsKeyPressed(OSKEY_4)) selectedBlock = World::BlockID::LOG;
             if(IsKeyPressed(OSKEY_5)) selectedBlock = World::BlockID::LEAVES;
+            if(IsKeyPressed(OSKEY_6)) selectedBlock = World::BlockID::CLOUD;
 
             if(debugKeysCooldown > 0) debugKeysCooldown -= 1;
             if(debugKeysCooldown == 0) {
@@ -242,10 +265,25 @@ namespace FPP {
                     }
                     if(IsKeyPressed(OSKEY_S)) {
                         world.Save();
-                        debugKeysCooldown = 20;
+                        DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "World \"" + world.worldSave.name + "\" saved.");
                     }
+
+                    GUI::DebugInfo::Switch();
+                    debugKeysCooldown = 20;
                 }
             }
+        }
+
+        void OnJumpPressed() {
+            if(doubleJumpCooldown > 0.0) {
+                if(!onGround) {
+                    isFlying = !isFlying;
+                    motion.z = 0;
+                    doubleJumpCooldown = 0;
+                    return;
+                }
+            }
+            doubleJumpCooldown = DOUBLE_JUMP_DELAY;
         }
     
         void Update() {
@@ -256,8 +294,8 @@ namespace FPP {
                 }
             }
             if(!waitingForChunksToLoad) {
-                if(motion.z > PLAYER_MAX_FALLING_SPEED) {
-                    motion.z -= GRAVITY * 1.0f/60.0f;
+                if(!isFlying && motion.z > PLAYER_MAX_FALLING_SPEED) {
+                    motion.z -= GRAVITY * 1.0/60.0;
                 }
             }
             UpdateMovement();
@@ -272,6 +310,7 @@ namespace FPP {
                 //BenchmarkReset();
                 //BenchmarkStart();
                 _currentChunk = newPos;
+                world.UpdateBuiltChunksPositions();
                 world.UpdateBuiltChunks(World::AbsolutePositionToChunkPos(position), newPos);
                 //BenchmarkEnd();
                 //print("UpdateBuiltChunks took " + BenchmarkGetElapsed(2) + " ms.\n");
@@ -291,42 +330,43 @@ namespace FPP {
             Collision::AABB paabb = Collision::AABB(pmin, pmax);
 
             if(isSneaking && onGround) {
-                while(move.x != 0.0f) {
-                    float movex = (move.x >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
-                    array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(move.x + movex, 0.0f, -stepHeight));
+                //__debug("movement " + move + " snap q " + PLAYER_BLOCK_SNAP_QUALITY);
+                while(move.x != 0.0) {
+                    double movex = (move.x >= 0.0) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                    array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(move.x + movex, 0.0, -stepHeight));
                     // __debug("clen " + c.length());
                     // for(int i = 0; i < c.length(); i++) {
                     //     __debug("aabb " + c[i]);
                     // }
                     if(c.length() != 0) break;
 
-                    if(move.x < PLAYER_BLOCK_SNAP_QUALITY && move.x >= -PLAYER_BLOCK_SNAP_QUALITY) move.x = 0.0f;
-                    else if(move.x > 0.0f) move.x -= PLAYER_BLOCK_SNAP_QUALITY;
+                    if(move.x < PLAYER_BLOCK_SNAP_QUALITY && move.x >= -PLAYER_BLOCK_SNAP_QUALITY) move.x = 0.0;
+                    else if(move.x > 0.0) move.x -= PLAYER_BLOCK_SNAP_QUALITY;
                     else move.x += PLAYER_BLOCK_SNAP_QUALITY;
                     //__debug("move.x " + move.x + " clen " + c.length());
                 }
-                while(move.y != 0.0f) {
-                    float movey = (move.y >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
-                    array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(0.0f, move.y + movey, -stepHeight));
+                while(move.y != 0.0) {
+                    double movey = (move.y >= 0.0) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                    array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(0.0, move.y + movey, -stepHeight));
                     if(c.length() != 0) break;
 
-                    if(move.y < PLAYER_BLOCK_SNAP_QUALITY && move.y >= -PLAYER_BLOCK_SNAP_QUALITY) move.y = 0.0f;
-                    else if(move.y > 0.0f) move.y -= PLAYER_BLOCK_SNAP_QUALITY;
+                    if(move.y < PLAYER_BLOCK_SNAP_QUALITY && move.y >= -PLAYER_BLOCK_SNAP_QUALITY) move.y = 0.0;
+                    else if(move.y > 0.0) move.y -= PLAYER_BLOCK_SNAP_QUALITY;
                     else move.y += PLAYER_BLOCK_SNAP_QUALITY;
                     //__debug("move.y " + move.y + " clen " + c.length());
                 }
-                while(move.x != 0.0f && move.y != 0.0f) {
-                    float movex = (move.x >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
-                    float movey = (move.y >= 0.0f) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                while(move.x != 0.0 && move.y != 0.0) {
+                    double movex = (move.x >= 0.0) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
+                    double movey = (move.y >= 0.0) ? (PLAYER_BLOCK_SNAP_QUALITY/2) : (-PLAYER_BLOCK_SNAP_QUALITY);
                     array<Collision::AABB> c = world.GetAABBCollisionBoxes(paabb.offset(move.x + movex, move.y + movey, -stepHeight));
                     if(c.length() != 0) break;
 
-                    if(move.x < PLAYER_BLOCK_SNAP_QUALITY && move.x >= -PLAYER_BLOCK_SNAP_QUALITY) move.x = 0.0f;
-                    else if(move.x > 0.0f) move.x -= PLAYER_BLOCK_SNAP_QUALITY;
+                    if(move.x < PLAYER_BLOCK_SNAP_QUALITY && move.x >= -PLAYER_BLOCK_SNAP_QUALITY) move.x = 0.0;
+                    else if(move.x > 0.0) move.x -= PLAYER_BLOCK_SNAP_QUALITY;
                     else move.x += PLAYER_BLOCK_SNAP_QUALITY;
 
-                    if(move.y < PLAYER_BLOCK_SNAP_QUALITY && move.y >= -PLAYER_BLOCK_SNAP_QUALITY) move.y = 0.0f;
-                    else if(move.y > 0.0f) move.y -= PLAYER_BLOCK_SNAP_QUALITY;
+                    if(move.y < PLAYER_BLOCK_SNAP_QUALITY && move.y >= -PLAYER_BLOCK_SNAP_QUALITY) move.y = 0.0;
+                    else if(move.y > 0.0) move.y -= PLAYER_BLOCK_SNAP_QUALITY;
                     else move.y += PLAYER_BLOCK_SNAP_QUALITY;
                     //__debug("move.x " + move.x + "move.y " + move.y + " clen " + c.length());
                 }
@@ -337,7 +377,7 @@ namespace FPP {
             if(!world.lastAABBCollisionBoxesGetWasSuccessful) {
                 if(!waitingForChunksToLoad) {
                     waitingForChunksToLoad = true;
-                    GUI::Menus::Attention::AddAttention(ATTENTION_LOADING_CHUNKS);
+                    GUI::Menus::Attention::AddAttention(ATTENTION_LOADING_CHUNKS, ATTENTION_LOADING_CHUNKS_TEXT);
                 }
                 return;
             } else {
@@ -351,19 +391,19 @@ namespace FPP {
 
 
             if(!IsZero(move.y)) {
-                float r = move.y;
+                double r = move.y;
                 for(int i = 0; i < collisions.length(); i++) {
                     move.y = collisions[i].calculateYOffset(paabb, move.y);
                 }
 
-                paabb = paabb.offset(0.0f, move.y, 0.0f);
+                paabb = paabb.offset(0.0, move.y, 0.0);
             }
             if(!IsZero(move.x)) {
                 for(int i = 0; i < collisions.length(); i++) {
                     move.x = collisions[i].calculateXOffset(paabb, move.x);
                 }
                 if(!IsZero(move.x)) {
-                    paabb = paabb.offset(move.x, 0.0f, 0.0f);
+                    paabb = paabb.offset(move.x, 0.0, 0.0);
                 }
             }
             if(!IsZero(move.z)) {
@@ -371,19 +411,19 @@ namespace FPP {
                     move.z = collisions[i].calculateZOffset(paabb, move.z);
                 }
                 if(!IsZero(move.z)) {
-                    paabb = paabb.offset(0.0f, 0.0f, move.z);
+                    paabb = paabb.offset(0.0, 0.0, move.z);
                 }
             }
 
-            absolute_position = Vector3(paabb.minX + PLAYER_SIZE / 2.0f, paabb.minY + PLAYER_SIZE / 2.0f, paabb.minZ + PLAYER_HEIGHT / 2.0f);
+            absolute_position = Vector3(paabb.minX + PLAYER_SIZE / 2.0, paabb.minY + PLAYER_SIZE / 2.0, paabb.minZ + PLAYER_HEIGHT / 2.0);
             isCollidedHorizontally = move.x != oldMove.x || move.y != oldMove.y;
             isCollidedVertically = move.z != oldMove.z;
             isCollided = isCollidedHorizontally || isCollidedVertically;
             onGround = isCollidedVertically && move.z < EPSILON;
 
-            if(move.x != oldMove.x) motion.x = 0.0f;
-            if(move.y != oldMove.y) motion.y = 0.0f;
-            if(move.z != oldMove.z) motion.z = 0.0f;
+            if(move.x != oldMove.x) motion.x = 0.0;
+            if(move.y != oldMove.y) motion.y = 0.0;
+            if(move.z != oldMove.z) motion.z = 0.0;
         }
 
         void UpdateBlockSelection() {
@@ -394,6 +434,7 @@ namespace FPP {
                                         8,
                                         hit)) {
                 GUI::SetBlockSelectionPosition(hit.position, hit.face);
+                lookingAt = Vector3I(hit.position.x + hit.position.chunk.position.x*CHUNK_SIZE, hit.position.y + hit.position.chunk.position.y*CHUNK_SIZE, hit.position.z + hit.position.chunk.position.z*CHUNK_SIZE);
                 
             } else {
                 GUI::HideBlockSelection();
