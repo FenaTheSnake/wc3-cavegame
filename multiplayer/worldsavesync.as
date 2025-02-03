@@ -10,7 +10,7 @@ namespace Multiplayer {
 
         void SyncWorldSave(string name) {
             syncTimer = CreateTimer();
-            TimerStart(syncTimer, 0.25f, true, @SyncNextChunk);
+            TimerStart(syncTimer, 0.2f, true, @SyncNextChunk);
 
             if(isHost) {
                 @syncingWorld = @Save::OpenWorldSave(name);
@@ -32,17 +32,20 @@ namespace Multiplayer {
 
         void SyncNextChunk() {
             if(!isHost) return;
-            __debug("syncing " + syncingChunkCounter + " " + chunksToSync[syncingChunkCounter]);
-            uint id = uint(syncingWorld.savedChunks[chunksToSync[syncingChunkCounter]]);
-            string data = TextFileReadLine(syncingWorld.chunksFiles[UINTID2ChunkFileID(id)].file, UINTID2ChunkID(id));
+            for(int i = 0; i < 1; i++){
+                __debug("syncing " + syncingChunkCounter + " " + chunksToSync[syncingChunkCounter]);
+                uint id = uint(syncingWorld.savedChunks[chunksToSync[syncingChunkCounter]]);
+                string data = TextFileReadLine(syncingWorld.chunksFiles[UINTID2ChunkFileID(id)].file, UINTID2ChunkID(id));
 
-            SendSyncData(MP_SYNCCHUNK_PREFIX, data);
-            syncingChunkCounter += 1;
-            GUI::Menus::Attention::UpdateAttention(ATTENTION_SYNCING_WORLD, ATTENTION_SYNCING_WORLD_TEXT + syncingWorld.name + "\n" + syncingChunkCounter + "/" + chunksToSync.length());
-            
-            if(syncingChunkCounter >= chunksToSync.length()) {
-                PauseTimer(syncTimer);
-                SendSyncData(MP_SYNCWORLD_END_PREFIX, "y");
+                SendSyncData(MP_SYNCCHUNK_PREFIX, data);
+                syncingChunkCounter += 1;
+                GUI::Menus::Attention::UpdateAttention(ATTENTION_SYNCING_WORLD, ATTENTION_SYNCING_WORLD_TEXT + syncingWorld.name + "\n" + syncingChunkCounter + "/" + chunksToSync.length());
+                
+                if(syncingChunkCounter >= chunksToSync.length()) {
+                    PauseTimer(syncTimer);
+                    SendSyncData(MP_SYNCWORLD_END_PREFIX, "y");
+                    break;
+                }
             }
         }
 

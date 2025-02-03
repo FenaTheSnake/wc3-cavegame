@@ -26,7 +26,7 @@ const float TIME_PLAYER_UPDATE = 0.01f;
 const float TIME_WORLD_UPDATE = 0.05f;
 const float TIME_GUI_UPDATE = 0.15f;
 const float TIME_MP_UPDATE = 0.2f;
-
+const float TIME_CLEANUP = 10.0f;
 
 // == PLAYER ==
 const double PLAYER_HEIGHT = BLOCK_SIZE * 1.75;       // why not 1.75? because fuck my life i guess (if you're too curious, try it yourself and spot the difference)
@@ -73,11 +73,13 @@ const int SAVE_BLOCK_INDEX_OFFSET = 32;
 
 // == MULTIPLAYER ==
 
-const string MP_SYNCCHUNK_PREFIX = "sc";
-const string MP_SETBLOCK_PREFIX = "sb";
-const string MP_CREATEWORLD_PREFIX = "cw";
-const string MP_SYNCWORLD_PREFIX = "sw";
-const string MP_SYNCWORLD_END_PREFIX = "se";
+const string MP_SETBLOCK_PREFIX = "sb";         // Information about set block
+const string MP_CREATEWORLD_PREFIX = "cw";      // Create new world with recieved name. Append "~1" if the world with the name already exists.
+const string MP_OPENWORLD_PREFIX = "ow";        // Open the world with recieved name. Exit the game if the world with the name not found.
+const string MP_SYNCWORLD_PREFIX = "sw";        // Begin synchronizing world save.
+const string MP_SYNCCHUNK_PREFIX = "sc";        // Synchonize recieved chunk data.
+const string MP_SYNCWORLD_END_PREFIX = "se";    // End synchronizing world save.
+const string MP_ENDGAME_PREFIX = "eg";          // End the game (host exits to main menu, players waiting for host).
 
 const int MP_SYNCHT_POS_X = 0;
 const int MP_SYNCHT_POS_Y = 1;

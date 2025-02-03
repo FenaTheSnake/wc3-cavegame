@@ -9,6 +9,29 @@ namespace World {
         CLOUD
     }
 
+    class BlockInfo {
+        BlockID id;
+        string name;
+        string texturePath;
+        bool transparent; // has any kind of transparency, would not occlude other blocks
+
+        BlockInfo() {}
+        BlockInfo(BlockID id, string name, string texPath, bool transparent) {
+            this.id = id; this.name = name; this.texturePath = texPath; this.transparent = transparent;
+        }
+    }
+
+    const array<BlockInfo> blocksInfo = { 
+                                        BlockInfo(BlockID::AIR,     "Air",       "",                     true),
+                                        BlockInfo(BlockID::GRASS,   "Grass",     "grassBlock.blp",       false),
+                                        BlockInfo(BlockID::DIRT,    "Dirt",      "dirtBlock.blp",        false),
+                                        BlockInfo(BlockID::STONE,   "Stone",     "stoneBlock.blp",       false),
+                                        BlockInfo(BlockID::LOG,     "Log",       "logBlock.blp",         false),
+                                        BlockInfo(BlockID::LEAVES,  "Leaves",    "leavesBlock.blp",      false),
+                                        BlockInfo(BlockID::CLOUD,   "Cloud",     "cloudBlock.blp",       true),
+                                        };
+    const int blocksAmount = blocksInfo.length();
+
     class BlockPos {
         Chunk@ chunk;
         int x, y, z;
@@ -48,14 +71,28 @@ namespace World {
     }
 
     string BlockID2Texture(BlockID id) {
-        if(id == BlockID::GRASS) return "grassBlock.blp";
-        if(id == BlockID::STONE) return "stoneBlock.blp";
-        if(id == BlockID::LOG) return "logBlock.blp";
-        if(id == BlockID::LEAVES) return "leavesBlock.blp";
-        if(id == BlockID::CLOUD) return "cloudBlock.blp";
+        if(id > blocksAmount || id < 0) return "dirtBlock.blp";
+        return blocksInfo[id].texturePath;
+
+        // if(id == BlockID::GRASS) return "grassBlock.blp";
+        // if(id == BlockID::STONE) return "stoneBlock.blp";
+        // if(id == BlockID::LOG) return "logBlock.blp";
+        // if(id == BlockID::LEAVES) return "leavesBlock.blp";
+        // if(id == BlockID::CLOUD) return "cloudBlock.blp";
         
-        return "dirtBlock.blp";
+        // return "dirtBlock.blp";
     }
+
+    string BlockID2Name(BlockID id) {
+        if(id > blocksAmount || id < 0) return "Unknown";
+        return blocksInfo[id].name;
+    }
+
+    bool BlockHasTransparency(BlockID id) {
+        if(id > blocksAmount || id < 0) return true;
+        return blocksInfo[id].transparent;
+    }
+
 
     int _debug_blocks_count = 0;
 

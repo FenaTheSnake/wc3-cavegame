@@ -38,7 +38,7 @@ namespace Multiplayer {
                     anim = PeerAnimation::WALKING;
                     if(customAnimTimer <= 0.0f) SetSpecialEffectAnimation(model, "walk");
                 }
-                if(customAnimTimer <= 0.0f) SetSpecialEffectTimeScale(model, (dist - 16.0f) / 2048.0f);
+                if(customAnimTimer <= 0.0f) SetSpecialEffectTimeScale(model, dist / 8192.0f);
             } else {
                 if(anim == PeerAnimation::WALKING) {
                     anim = PeerAnimation::IDLE;

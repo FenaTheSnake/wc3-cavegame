@@ -14,8 +14,6 @@ namespace World {
 
         Save::WorldSave@ worldSave;
 
-        bool repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = false;
-
         // Loads given chunk if it is not loaded.
         Chunk@ RequestChunk(const ChunkPos &in position) {
             if(loadedChunks.exists(position)) {
@@ -193,7 +191,6 @@ namespace World {
                 }
             }
 
-            repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = true; // AAAAAAAAAAAA I DONT KNOW
             //__debug("Requested / Unloaded chunks: " + _debug_loaded + " / " + _debug_unloaded);
             //__debug("ReservedGraphics usage: " + Memory::usedGraphics.length() + "/" + RESERVE_GRAPHICS_COUNT);
             //__debug("ChunkPool usage: " + Memory::chunkPool.usedChunks.length() + "/" + CHUNK_POOL_MAX_SIZE);
@@ -238,6 +235,25 @@ namespace World {
             }
         }
 
+        // removes scheduled blocks that are too far away from player and unlikely would be generated
+        void CleanScheduledBlocks() {
+            for(uint i = 0; i < scheduledBlocks.length(); i++) {
+                if(scheduledBlocks[i].bpos.chunk == null) {
+                    Vector3 p = Vector3(scheduledBlocks[i].bpos.x * BLOCK_SIZE, scheduledBlocks[i].bpos.y * BLOCK_SIZE, scheduledBlocks[i].bpos.z * BLOCK_SIZE);
+                    if(Vector3Distance(p, Main::player.absolute_position) >= CHUNK_SIZE * BLOCK_SIZE * 12) {
+                        scheduledBlocks.removeAt(i--);
+                    }
+                } else {
+                    Vector3 p = Vector3(scheduledBlocks[i].bpos.x * BLOCK_SIZE + scheduledBlocks[i].bpos.chunk.position.x * BLOCK_SIZE * CHUNK_SIZE, 
+                                        scheduledBlocks[i].bpos.y * BLOCK_SIZE + scheduledBlocks[i].bpos.chunk.position.y * BLOCK_SIZE * CHUNK_SIZE, 
+                                        scheduledBlocks[i].bpos.z * BLOCK_SIZE + scheduledBlocks[i].bpos.chunk.position.z * BLOCK_SIZE * CHUNK_SIZE);
+                    if(Vector3Distance(p, Main::player.absolute_position) >= CHUNK_SIZE * BLOCK_SIZE * 12) {
+                        scheduledBlocks.removeAt(i--);
+                    }
+                }
+            }
+        }
+
         // unloads all chunks that are generated but not built
         void UnloadUnrelevantChunksIfNecessary() {
             if(Memory::chunkPool.IsRequiresClearing()) {
@@ -257,57 +273,57 @@ namespace World {
                 ChunkPos posL = ChunkPos(pos.x - 1, pos.y, pos.z);
                 if(loadedChunks.exists(posL)) {
                     Chunk@ cl = cast<Chunk@>(loadedChunks[posL]);
-                    if(cl.blocks[CHUNK_SIZE - 1][blockY][blockZ] != BlockID::AIR) occludedSides++;
+                    if(!BlockHasTransparency(cl.blocks[CHUNK_SIZE - 1][blockY][blockZ])) occludedSides++;
                 } else occludedSides++;
             } else {
-                if(c.blocks[blockX-1][blockY][blockZ] != BlockID::AIR) occludedSides++;
+                if(!BlockHasTransparency(c.blocks[blockX-1][blockY][blockZ])) occludedSides++;
             }
             if(blockX + 1 == CHUNK_SIZE) {
                 ChunkPos posR = ChunkPos(pos.x + 1, pos.y, pos.z);
                 if(loadedChunks.exists(posR)) {
                     Chunk@ cr = cast<Chunk@>(loadedChunks[posR]);
-                    if(cr.blocks[0][blockY][blockZ] != BlockID::AIR) occludedSides++;
+                    if(!BlockHasTransparency(cr.blocks[0][blockY][blockZ])) occludedSides++;
                 } else occludedSides++;
             } else {
-                if(c.blocks[blockX+1][blockY][blockZ] != BlockID::AIR) occludedSides++;
+                if(!BlockHasTransparency(c.blocks[blockX+1][blockY][blockZ])) occludedSides++;
             }
 
             if(blockY - 1 == -1) {
                 ChunkPos posB = ChunkPos(pos.x, pos.y - 1, pos.z);
                 if(loadedChunks.exists(posB)) {
                     Chunk@ cb = cast<Chunk@>(loadedChunks[posB]);
-                    if(cb.blocks[blockX][CHUNK_SIZE - 1][blockZ] != BlockID::AIR) occludedSides++;
+                    if(!BlockHasTransparency(cb.blocks[blockX][CHUNK_SIZE - 1][blockZ])) occludedSides++;
                 } else occludedSides++;
             } else {
-                if(c.blocks[blockX][blockY-1][blockZ] != BlockID::AIR) occludedSides++;
+                if(!BlockHasTransparency(c.blocks[blockX][blockY-1][blockZ])) occludedSides++;
             }
             if(blockY + 1 == CHUNK_SIZE) {
                 ChunkPos posF = ChunkPos(pos.x, pos.y + 1, pos.z);
                 if(loadedChunks.exists(posF)) {
                     Chunk@ cf = cast<Chunk@>(loadedChunks[posF]);
-                    if(cf.blocks[blockX][0][blockZ] != BlockID::AIR) occludedSides++;
+                    if(!BlockHasTransparency(cf.blocks[blockX][0][blockZ])) occludedSides++;
                 } else occludedSides++;
             } else {
-                if(c.blocks[blockX][blockY+1][blockZ] != BlockID::AIR) occludedSides++;
+                if(!BlockHasTransparency(c.blocks[blockX][blockY+1][blockZ])) occludedSides++;
             }
 
             if(blockZ - 1 == -1) {
                 ChunkPos posD = ChunkPos(pos.x, pos.y, pos.z - 1);
                 if(loadedChunks.exists(posD)) {
                     Chunk@ cd = cast<Chunk@>(loadedChunks[posD]);
-                    if(cd.blocks[blockX][blockY][CHUNK_SIZE - 1] != BlockID::AIR) occludedSides++;
+                    if(!BlockHasTransparency(cd.blocks[blockX][blockY][CHUNK_SIZE - 1])) occludedSides++;
                 } else occludedSides++;
             } else {
-                if(c.blocks[blockX][blockY][blockZ-1] != BlockID::AIR) occludedSides++;
+                if(!BlockHasTransparency(c.blocks[blockX][blockY][blockZ-1])) occludedSides++;
             }
             if(blockZ + 1 == CHUNK_SIZE) {
                 ChunkPos posU = ChunkPos(pos.x, pos.y, pos.z + 1);
                 if(loadedChunks.exists(posU)) {
                     Chunk@ cu = cast<Chunk@>(loadedChunks[posU]);
-                    if(cu.blocks[blockX][blockY][0] != BlockID::AIR) occludedSides++;
+                    if(!BlockHasTransparency(cu.blocks[blockX][blockY][0])) occludedSides++;
                 } else occludedSides++;
             } else {
-                if(c.blocks[blockX][blockY][blockZ+1] != BlockID::AIR) occludedSides++;
+                if(!BlockHasTransparency(c.blocks[blockX][blockY][blockZ+1])) occludedSides++;
             }
 
             //if(occludedSides == 6) {
@@ -423,7 +439,7 @@ namespace World {
         // updates already built chunks position
         // used when player loops back to reposition already generated chunks and do not generate them again
         void UpdateBuiltChunksPositions() {
-            __debug("Repositioning. Player abpos " + Main::player.absolute_position + " relative " + Main::player.position);
+            //__debug("Repositioning. Player abpos " + Main::player.absolute_position + " relative " + Main::player.position);
 
             for(uint i = 0; i < builtChunks.length(); i++) {
                 ChunkPos prev = builtChunks[i].on_map_position;
@@ -466,6 +482,19 @@ namespace World {
             }
 
             worldSave.FinishSaving();
+            DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "World \"" + worldSave.name + "\" saved.");
+        }
+
+        void Unload() {
+            array<string>@ keys = loadedChunks.getKeys();
+            for(int i = 0; i < keys.length(); i++) {
+                UnloadChunkCompletely(cast<Chunk@>(loadedChunks[keys[i]]).position);
+            }
+
+            requestedToBuildChunks.removeRange(0, requestedToBuildChunks.length());
+            requestedToBuildChunks.resize(0);
+            scheduledBlocks.removeRange(0, scheduledBlocks.length());
+            scheduledBlocks.resize(0);
         }
     }
 
@@ -554,10 +583,6 @@ namespace World {
             float cz = playerPos.z + diff_z;
 
             result.z = ModRange(cz, -(far_border_z/2), far_border_z/2);
-            if(govno) {
-                __debug("abspos " + position + " player abspos " + Main::player.absolute_position + " cz " + cz);
-                __debug("result: " + result);
-            }
             
             // if(position.z == 2048) {
             //     __debug(position.z + " -> " + result.z + " farborder " + far_border_z);
@@ -584,16 +609,8 @@ namespace World {
         return result;
     }
 
-    bool govno = false;
     ChunkPos ChunkPosToWC3Position(const ChunkPos &in position) {
-        if(position.x == 0 && position.y == -1 && position.z == 10) govno = true;
         Vector3 v = AbsolutePositionToWC3Position(Vector3(position.x * CHUNK_SIZE * BLOCK_SIZE, position.y * CHUNK_SIZE * BLOCK_SIZE, position.z * CHUNK_SIZE * BLOCK_SIZE), true);
-        if(position.x == 0 && position.y == -1 && position.z == 10) {
-            ChunkPos c = ChunkPos(MathRealRound(v.x / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.y / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.z / BLOCK_SIZE / CHUNK_SIZE));
-            __debug("(ChunkPos2WC3) chunk " + position + " to " + c);
-            govno = false;
-        }
-        //__debug("chunkPosToWC3 " + position + " -> " + ChunkPos(int(v.x / BLOCK_SIZE / CHUNK_SIZE), int(v.y / BLOCK_SIZE / CHUNK_SIZE), int(v.z / BLOCK_SIZE / CHUNK_SIZE)));
         return ChunkPos(MathRealRound(v.x / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.y / BLOCK_SIZE / CHUNK_SIZE), MathRealRound(v.z / BLOCK_SIZE / CHUNK_SIZE));
     }
 

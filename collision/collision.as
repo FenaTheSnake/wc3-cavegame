@@ -45,11 +45,13 @@ namespace Collision {
         int maxIter = 100;
         while(maxIter-- > 0) {
             World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(x, y, z));
-            World::BlockID b = bpos.chunk.blocks[bpos.x][bpos.y][bpos.z];
-            if(b != World::BlockID::AIR) {
-                //BlockRaycastInfo test = BlockRaycastInfo(b, Vector3I(), face);
-                info = BlockRaycastInfo(b, bpos, face);
-                return true;
+            if(bpos.chunk !is null) {
+                World::BlockID b = bpos.chunk.blocks[bpos.x][bpos.y][bpos.z];
+                if(b != World::BlockID::AIR) {
+                    //BlockRaycastInfo test = BlockRaycastInfo(b, Vector3I(), face);
+                    info = BlockRaycastInfo(b, bpos, face);
+                    return true;
+                }
             }
 
             if(tMaxX < tMaxY) {

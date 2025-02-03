@@ -13,17 +13,23 @@ namespace Save {
                 if(names[i].isEmpty()) names.removeAt(i--);
             }
 
+            TextFileClose(worldList);
+            worldList = nil;
             return @names;
         }
 
         void AddWorldToList(string name) {
             array<string>@ worlds = GetWorldList();
+            worldList = TextFileOpen(PATH_MAP_ROOT + PATH_GLOBAL_WORLD_LIST_FILE + SAVE_EXTENSION);
             if(worlds.find(name) < 0) {
                 worlds.insertLast(name);
 
                 TextFileClear(worldList);
                 TextFileWriteLine(worldList, join(worlds, "\n"));
             }
+
+            TextFileClose(worldList);
+            worldList = nil;
         }
 
         void OpenChunkFile(string path) {
@@ -32,7 +38,3 @@ namespace Save {
         }
     }
 }
-
-
-// проверить монжо ли просто close и open texthandle без десинка
-// если нельзя то придется открывать одинаковые файлы у всех игрокв

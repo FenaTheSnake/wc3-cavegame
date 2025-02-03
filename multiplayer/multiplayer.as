@@ -9,6 +9,8 @@ namespace Multiplayer {
     trigger trig_SyncWorld;
     trigger trig_SyncChunk;
     trigger trig_SyncWorldEnd;
+    trigger trig_SyncEndGame;
+    trigger trig_SyncOpenWorld;
 
     hashtable syncHT;
     array<player> players;
@@ -22,6 +24,8 @@ namespace Multiplayer {
         trig_SyncWorld = CreateTrigger();
         trig_SyncChunk = CreateTrigger();
         trig_SyncWorldEnd = CreateTrigger();
+        trig_SyncEndGame = CreateTrigger();
+        trig_SyncOpenWorld = CreateTrigger();
         for(int i = 0; i < 12; i++) {
             if(GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING) {
                 players.insertLast(Player(i));
@@ -33,6 +37,8 @@ namespace Multiplayer {
                 TriggerRegisterPlayerSyncEvent(trig_SyncWorld, Player(i), MP_SYNCWORLD_PREFIX, true);
                 TriggerRegisterPlayerSyncEvent(trig_SyncChunk, Player(i), MP_SYNCCHUNK_PREFIX, true);
                 TriggerRegisterPlayerSyncEvent(trig_SyncWorldEnd, Player(i), MP_SYNCWORLD_END_PREFIX, true);
+                TriggerRegisterPlayerSyncEvent(trig_SyncEndGame, Player(i), MP_ENDGAME_PREFIX, true);
+                TriggerRegisterPlayerSyncEvent(trig_SyncOpenWorld, Player(i), MP_OPENWORLD_PREFIX, true);
             }
         }
         TriggerAddAction(trig_SetBlock, @OnSetBlock);
@@ -40,6 +46,8 @@ namespace Multiplayer {
         TriggerAddAction(trig_SyncWorld, @OnSyncWorld);
         TriggerAddAction(trig_SyncChunk, @WorldSaveSync::OnSyncChunk);
         TriggerAddAction(trig_SyncWorldEnd, @WorldSaveSync::OnSyncWorldEnd);
+        TriggerAddAction(trig_SyncEndGame, @Main::EndTheGame);
+        TriggerAddAction(trig_SyncOpenWorld, @OnOpenWorld);
 
         SetSpecialEffectPositionWithZ(peers[GetPlayerId(GetLocalPlayer())].model, -9999, -9999, -9999);
     }
@@ -91,6 +99,24 @@ namespace Multiplayer {
         if(!isHost) GUI::Menus::Attention::RemoveAttention(ATTENTION_WAITING_FOR_HOST);
         GUI::Menus::Attention::AddAttention(ATTENTION_SYNCING_WORLD, ATTENTION_SYNCING_WORLD_TEXT);
         WorldSaveSync::SyncWorldSave(data);
+    }
+
+    void SendEndGame() {
+        SendSyncData(MP_ENDGAME_PREFIX, "");
+    }
+
+    void SendOpenWorld(string name) {
+        string data = name;
+        SendSyncData(MP_OPENWORLD_PREFIX, data);
+    }
+
+    void OnOpenWorld() {
+        string data = GetTriggerSyncData();
+        Save::WorldSave@ save = @Save::OpenWorldSave(data);
+        if(save is null) EndGame(false);
+
+        Main::StartGame(@save);
+        GUI::Menus::Attention::RemoveAttention(ATTENTION_WAITING_FOR_HOST);
     }
 }
 

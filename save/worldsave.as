@@ -26,6 +26,10 @@ namespace Save {
 
         WorldSave() {}
         ~WorldSave() {
+            Close();
+        }
+
+        void Close() {
             for(int i = 0; i < chunksFiles.length(); i++) {
                 if(chunksFiles[i] != null){
                     TextFileClose(chunksFiles[i].file);

@@ -1,11 +1,19 @@
 #include "menus\\worldcreation.as"
 #include "menus\\attention.as"
+#include "menus\\pausemenu.as"
 #include "debuginfo.as"
 
 namespace GUI {
+    bool initialized;
+
     effect blockSelectionEffect;
 
+    bool cursorHidden = false;
+    framehandle cursor = nil;
+    Vector2 rememberCursorPos = Vector2(0.8/2, 0.6/2);
+
     void Init() {
+        if(initialized) return;
 
         // CURSOR
         framehandle gameUI = GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 );
@@ -21,6 +29,8 @@ namespace GUI {
 
         // BLOCK SELECTION EFFECT
         blockSelectionEffect = AddSpecialEffect("blockSelection.mdx", -9999, -9999);
+
+        initialized = true;
     }
 
     void SetBlockSelectionPosition(World::BlockPos &in blockPos, Vector3 direction) {
@@ -39,5 +49,34 @@ namespace GUI {
     }
     void HideBlockSelection() {
         SetSpecialEffectPositionWithZ(blockSelectionEffect, -9999, -9999, -9999);
+    }
+
+    void HookCursor() {
+        if(cursor == nil) cursor = GetOriginFrame(ORIGIN_FRAME_CURSOR_FRAME, 0);
+        rememberCursorPos = Vector2(GetMouseScreenRelativeX(), GetMouseScreenRelativeY());
+        SetMouseScreenRelativePosition(FPP::SCREEN_CENTER.x, FPP::SCREEN_CENTER.y);
+        Main::player.IgnoreMouseFor(5);   // because fuck me i guess
+        SetFrameAlpha(cursor, 0);
+        cursorHidden = true;
+    }
+    void UnhookCursor() {
+        if(cursor == nil) cursor = GetOriginFrame(ORIGIN_FRAME_CURSOR_FRAME, 0);
+        SetFrameAlpha(cursor, 255);
+        SetMouseScreenRelativePosition(rememberCursorPos.x, 0.6 - rememberCursorPos.y);
+        cursorHidden = false;
+    }
+
+    void OnESC() {
+        if(GetTriggerPlayer() != GetLocalPlayer()) return;
+        if(Main::isInGame) {
+            if(Menus::PauseMenu::shown) {
+                Menus::PauseMenu::Hide();
+                HookCursor();
+            }
+            else {
+                Menus::PauseMenu::Show();
+                UnhookCursor();
+            }
+        }
     }
 }

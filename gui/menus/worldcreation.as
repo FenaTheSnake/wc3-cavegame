@@ -5,12 +5,19 @@ namespace GUI {
             framehandle but_CreateNewSave;
             framehandle but_OpenSave;
             framehandle but_Exit;
+
             framehandle but_UpdateList;
             framehandle but_PrevPage;
             framehandle but_NextPage;
+
             framehandle txt_WorldName;
             framehandle txt_WorldName_shadow;
             framehandle edt_WorldName;
+
+            framehandle bck_DoNotSync;
+            framehandle chk_DoNotSync;
+            framehandle txt_DoNotSync;
+            framehandle txt_DoNotSync2;
 
             framehandle lst_Worlds;
             array<framehandle> lst_WorldsItems;
@@ -26,8 +33,12 @@ namespace GUI {
             trigger onWorldsListClick;
             trigger onWorldsListTextClick;
 
+            trigger doNotSync_check;
+
             int worldListPage = 0;
             array<string>@ worldNames;
+
+            bool doNotSync = false;
 
             void OnCreateNewWorld() {
                 if(!Multiplayer::isHost) return;
@@ -40,7 +51,13 @@ namespace GUI {
                 if(!Multiplayer::isHost) return;
                 if(GetFrameText(edt_WorldName).length() < 2) return;
                 if(!Save::IsWorldExists(GetFrameText(edt_WorldName))) return;
-                Multiplayer::SendSyncWorld(GetFrameText(edt_WorldName));
+
+
+                if(doNotSync) {
+                    Multiplayer::SendOpenWorld(GetFrameText(edt_WorldName));
+                } else {
+                    Multiplayer::SendSyncWorld(GetFrameText(edt_WorldName));
+                }
                 Hide();
             }
 
@@ -81,6 +98,7 @@ namespace GUI {
                 }
             }
             void OnUpdateListClicked() {
+                GenerateWorldList();
                 ShowCurrentPage();
             }
             void OnPrevPageClicked() {
@@ -90,6 +108,10 @@ namespace GUI {
             void OnNextPageClicked() {
                 worldListPage += 1;
                 ShowCurrentPage();
+            }
+
+            void OnDoNotSyncCheck() {
+                doNotSync = GetTriggerFrameEvent() == FRAMEEVENT_CHECKBOX_CHECKED;
             }
 
             void Init() {
@@ -188,6 +210,48 @@ namespace GUI {
                 TriggerRegisterFrameEvent(onNextPageClicked, but_NextPage, FRAMEEVENT_CONTROL_CLICK);
                 TriggerAddAction(onNextPageClicked, @OnNextPageClicked);
 
+                bck_DoNotSync = CreateFrameByType( "BACKDROP", "CheckboxBG", gameUI, "", 0 );
+                SetFrameBackdropTexture( bck_DoNotSync, 1, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", true, true, "UI\\widgets\\BattleNet\\bnet-tooltip-border.blp", BORDER_FLAG_ALL, false );
+                SetFrameHeight( bck_DoNotSync, .04 );
+                SetFrameBorderSize( bck_DoNotSync, 1, .0125 );
+                SetFrameBackgroundSize( bck_DoNotSync, 1, .128 );
+                SetFrameBackgroundInsets( bck_DoNotSync, 1, .005, .005, .005, .005 );
+                SetFrameRelativePoint(bck_DoNotSync, FRAMEPOINT_TOPLEFT, gameUI, FRAMEPOINT_TOPLEFT, 0.1, -0.535);
+                SetFrameSize(bck_DoNotSync, 0.2, 0.06);
+
+                chk_DoNotSync = CreateFrameByType( "CHECKBOX", "", gameUI, "", 0 );
+                SetFrameRelativePoint(chk_DoNotSync, FRAMEPOINT_TOPLEFT, bck_DoNotSync, FRAMEPOINT_TOPLEFT, 0.01, -0.01);
+                SetFrameSize(chk_DoNotSync, 0.02*0.6, 0.02*0.8);
+
+                SetFrameControlFlag( chk_DoNotSync, CONTROL_STYLE_DRAW, true );
+                SetFrameControlFlag( chk_DoNotSync, CONTROL_STYLE_AUTOTRACK, true );
+
+                SetFrameTexture( chk_DoNotSync, "UI\\Widgets\\Glues\\GlueScreen-Checkbox-Background.blp", 0, false );
+                SetFrameTexture( chk_DoNotSync, "UI\\Widgets\\Glues\\GlueScreen-Checkbox-BackgroundPressed.blp", 1, false );
+                SetFrameTexture( chk_DoNotSync, "UI\\Widgets\\Glues\\GlueScreen-Checkbox-BackgroundDisabled.blp", 2, false );
+                SetFrameTexture( chk_DoNotSync, "UI\\Widgets\\Glues\\GlueScreen-Checkbox-Check.blp", 5, false );
+                SetFrameTexture( chk_DoNotSync, "UI\\Widgets\\Glues\\GlueScreen-Checkbox-CheckDisabled.blp", 6, false );
+
+                doNotSync_check = CreateTrigger();
+                TriggerRegisterFrameEvent(doNotSync_check, chk_DoNotSync, FRAMEEVENT_CHECKBOX_CHECKED);
+                TriggerRegisterFrameEvent(doNotSync_check, chk_DoNotSync, FRAMEEVENT_CHECKBOX_UNCHECKED);
+                TriggerAddAction(doNotSync_check, @OnDoNotSyncCheck);
+
+                txt_DoNotSync = CreateFrameByType("TEXT", "MyTextFrame", bck_DoNotSync, "", 2);
+                SetFrameText(txt_DoNotSync, "|cffffcc00Do not synchronize loaded world|r");
+                SetFrameRelativePoint(txt_DoNotSync, FRAMEPOINT_TOPLEFT, bck_DoNotSync, FRAMEPOINT_TOPLEFT, 0.025, -0.0125);
+                txt_DoNotSync2 = CreateFrameByType("TEXT", "MyTextFrame", bck_DoNotSync, "", 3);
+                SetFrameText(txt_DoNotSync2, "Do not waste time synchonizing world.\nAll players that do not have a world with same name will be desynchronized.\nWorlds are not checked for differences.\nMake sure all players have the same worlds with the same name.");
+                SetFrameRelativePoint(txt_DoNotSync2, FRAMEPOINT_TOPLEFT, bck_DoNotSync, FRAMEPOINT_TOPLEFT, 0.025/0.5, -0.025/0.5);
+                SetFrameScale(txt_DoNotSync2, 0.5);
+
+                if(Multiplayer::players.length() == 1) {
+                    doNotSync = true;
+                    SetFrameCheckState(chk_DoNotSync, true);
+                    SetFrameEnabled(chk_DoNotSync, false);
+                }
+
+
                 GenerateWorldList();
                 Hide();
             }
@@ -246,6 +310,10 @@ namespace GUI {
                 ShowFrame(txt_WorldName_shadow, true);
                 ShowFrame(edt_WorldName, true);
                 ShowFrame(lst_Worlds, true);
+                ShowFrame(chk_DoNotSync, true);
+                ShowFrame(txt_DoNotSync, true);
+                ShowFrame(txt_DoNotSync2, true);
+                ShowFrame(bck_DoNotSync, true);
 
                 ShowCurrentPage();
             }
@@ -261,6 +329,9 @@ namespace GUI {
                 SetFrameFocus(txt_WorldName_shadow, false);
                 SetFrameFocus(edt_WorldName, false);
                 SetFrameFocus(lst_Worlds, false);
+                SetFrameFocus(chk_DoNotSync, false);
+                SetFrameFocus(txt_DoNotSync, false);
+                SetFrameFocus(txt_DoNotSync2, false);
 
                 ShowFrame(but_CreateNewSave, false);
                 ShowFrame(but_OpenSave, false);
@@ -272,6 +343,10 @@ namespace GUI {
                 ShowFrame(txt_WorldName_shadow, false);
                 ShowFrame(edt_WorldName, false);
                 ShowFrame(lst_Worlds, false);
+                ShowFrame(chk_DoNotSync, false);
+                ShowFrame(txt_DoNotSync, false);
+                ShowFrame(txt_DoNotSync2, false);
+                ShowFrame(bck_DoNotSync, false);
             }
         }
 

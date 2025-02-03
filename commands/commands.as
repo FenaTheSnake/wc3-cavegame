@@ -1,4 +1,5 @@
 #include "help.as"
+#include "quit.as"
 #include "tp.as"
 
 namespace Commands {
@@ -9,6 +10,7 @@ namespace Commands {
     void Init() {
         commands["help"] = @Help::OnCommandSent;
         commands["tp"] = @Teleport::OnCommandSent;
+        commands["quit"] = @Quit::OnCommandSent;
     }
 
     void ExecuteCommand(string command, player p) {

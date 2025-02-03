@@ -46,8 +46,12 @@ namespace FPP {
 
         // pos of block looking at.
         Vector3I lookingAt;
+        World::BlockID lookingAtBlockID;
+
+        int ignoreMouseFor = 0;
 
         private World::ChunkPos _currentChunk;
+
 
         void Init(World::WorldInstance@ world, const Vector3 &in position) {
             this.absolute_position = position;
@@ -55,9 +59,6 @@ namespace FPP {
 
             currentFacing = Vector2(0.0f, 0.0f);
             targetFacing = Vector2(0.0f, 0.0f);
-
-            framehandle cursor = GetOriginFrame(ORIGIN_FRAME_CURSOR_FRAME, 0);
-            SetFrameAlpha(cursor, 0);
 
             //_currentChunk = World::AbsolutePositionToChunkPos(absolute_position);
             //world.RequestChunk(_currentChunk);
@@ -108,7 +109,7 @@ namespace FPP {
             }
             if(d > 2000.0) {
                 world.UpdateBuiltChunksPositions();
-                world.repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = true;
+                //world.repositionBuiltChunksWhenYouAreReadyPleaseNoPressureJustDoItButPreferablyDoItSoonerOk = true;
             }
         }
 
@@ -141,23 +142,24 @@ namespace FPP {
             Vector2 mousePos = Vector2(GetMouseScreenRelativeX(), GetMouseScreenRelativeY());
 
             if(Vector2Distance(mousePos, SCREEN_CENTER) > 0.0000001f) {
-                targetFacing.x -= (mousePos.x - SCREEN_CENTER.x) * cameraSpeed;
-                targetFacing.y += (mousePos.y - SCREEN_CENTER.y) * cameraSpeed;
-                if(targetFacing.x > 360.0f) { 
-                    targetFacing.x -= 360.0f;
-                    currentFacing.x = targetFacing.x;
-                    //SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, 0);
+                if(ignoreMouseFor == 0) {        
+                    targetFacing.x -= (mousePos.x - SCREEN_CENTER.x) * cameraSpeed;
+                    targetFacing.y += (mousePos.y - SCREEN_CENTER.y) * cameraSpeed;
+                    if(targetFacing.x > 360.0f) { 
+                        targetFacing.x -= 360.0f;
+                        currentFacing.x = targetFacing.x;
+                        //SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, 0);
+                    }
+                    if(targetFacing.x < 0.0f) {
+                        targetFacing.x += 360.0f;
+                        currentFacing.x = targetFacing.x;
+                        //SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, 0);
+                    }
+                    if(targetFacing.y > 89.9f) targetFacing.y = 89.9f;
+                    if(targetFacing.y < -89.9f) targetFacing.y = -89.9f;
                 }
-                if(targetFacing.x < 0.0f) {
-                    targetFacing.x += 360.0f;
-                    currentFacing.x = targetFacing.x;
-                    //SetCameraField(CAMERA_FIELD_ROTATION, currentFacing.x, 0);
-                }
-                if(targetFacing.y > 89.9f) targetFacing.y = 89.9f;
-                if(targetFacing.y < -89.9f) targetFacing.y = -89.9f;
-
-
                 SetMouseScreenRelativePosition(SCREEN_CENTER.x, SCREEN_CENTER.y);
+                if(ignoreMouseFor > 0) ignoreMouseFor--;
             }
 
             if(blockBreakCooldown > 0) blockBreakCooldown--;
@@ -265,7 +267,6 @@ namespace FPP {
                     }
                     if(IsKeyPressed(OSKEY_S)) {
                         world.Save();
-                        DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "World \"" + world.worldSave.name + "\" saved.");
                     }
 
                     GUI::DebugInfo::Switch();
@@ -275,6 +276,7 @@ namespace FPP {
         }
 
         void OnJumpPressed() {
+            if(GetTriggerPlayer() != GetLocalPlayer()) return;
             if(doubleJumpCooldown > 0.0) {
                 if(!onGround) {
                     isFlying = !isFlying;
@@ -288,9 +290,11 @@ namespace FPP {
     
         void Update() {
             if(IsWindowActive()) {
-                InputMouse();
-                if(!waitingForChunksToLoad) {
-                    InputKeyboard();
+                if(GUI::cursorHidden) {
+                    InputMouse();
+                    if(!waitingForChunksToLoad) {
+                        InputKeyboard();
+                    }
                 }
             }
             if(!waitingForChunksToLoad) {
@@ -435,10 +439,15 @@ namespace FPP {
                                         hit)) {
                 GUI::SetBlockSelectionPosition(hit.position, hit.face);
                 lookingAt = Vector3I(hit.position.x + hit.position.chunk.position.x*CHUNK_SIZE, hit.position.y + hit.position.chunk.position.y*CHUNK_SIZE, hit.position.z + hit.position.chunk.position.z*CHUNK_SIZE);
+                lookingAtBlockID = hit.position.chunk.blocks[hit.position.x][hit.position.y][hit.position.z];
                 
             } else {
                 GUI::HideBlockSelection();
             }
+        }
+
+        void IgnoreMouseFor(int ticks) {
+            ignoreMouseFor = ticks;
         }
     }
 }
