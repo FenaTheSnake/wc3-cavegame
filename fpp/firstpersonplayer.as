@@ -38,8 +38,6 @@ namespace FPP {
 
         float speed = 4.0f;
         float cameraSpeed = 100.0f;
-
-        World::BlockID selectedBlock = World::BlockID::GRASS;
         int blockBreakCooldown = 0;
 
         int debugKeysCooldown = 10;
@@ -190,8 +188,8 @@ namespace FPP {
                                                             hit.position.chunk.position.y*CHUNK_SIZE + hit.position.y, 
                                                             hit.position.chunk.position.z*CHUNK_SIZE + hit.position.z) + hit.face;
                     World::BlockPos bpos = world.GetBlockByAbsoluteBlockPos(World::BlockPos(placementPosition.x, placementPosition.y, placementPosition.z));
-                    bpos.chunk.SetBlock(bpos, selectedBlock, World::SetBlockReason::PLAYER);
-                    Multiplayer::SendSetBlock(bpos, selectedBlock);
+                    bpos.chunk.SetBlock(bpos, GUI::Hotbar::GetSelectedBlock(), World::SetBlockReason::PLAYER);
+                    Multiplayer::SendSetBlock(bpos, GUI::Hotbar::GetSelectedBlock());
                     
                 }
                 blockBreakCooldown = 10;
@@ -218,8 +216,8 @@ namespace FPP {
                 doubleJumpCooldown -= 0.05f; // if we hold space then we don't want to enable/disable flying mode
                 if(onGround) {
                     movement.z = PLAYER_JUMP_STRENGTH;
-                    movement.x *= 3.0f;
-                    movement.y *= 3.0f;
+                    movement.x *= 10.0f;
+                    movement.y *= 10.0f;
                 }
                 if(isFlying) {
                     motion.z += PLAYER_DEFAULT_SPEED * 1.5f;
@@ -250,13 +248,6 @@ namespace FPP {
             eyePosition = isSneaking ? PLAYER_SNEAKING_EYES_POSITION : PLAYER_DEFAULT_EYES_POSITION;
             
             motion += movement;
-
-            if(IsKeyPressed(OSKEY_1)) selectedBlock = World::BlockID::GRASS;
-            if(IsKeyPressed(OSKEY_2)) selectedBlock = World::BlockID::DIRT;
-            if(IsKeyPressed(OSKEY_3)) selectedBlock = World::BlockID::STONE;
-            if(IsKeyPressed(OSKEY_4)) selectedBlock = World::BlockID::LOG;
-            if(IsKeyPressed(OSKEY_5)) selectedBlock = World::BlockID::LEAVES;
-            if(IsKeyPressed(OSKEY_6)) selectedBlock = World::BlockID::CLOUD;
 
             if(debugKeysCooldown > 0) debugKeysCooldown -= 1;
             if(debugKeysCooldown == 0) {

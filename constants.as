@@ -99,3 +99,10 @@ const string ATTENTION_WAITING_FOR_HOST_TEXT = "Waiting for host to select a wor
 const string ATTENTION_LOADING_CHUNKS_TEXT = "Loading chunks...";
 const string ATTENTION_SAVING_WORLD_TEXT = "Saving world...";
 const string ATTENTION_SYNCING_WORLD_TEXT = "Synchronizing world ";
+
+// == HOTBAR ==
+const int HOTBAR_CAPACITY = 10;
+
+// == CREATIVE INVENTORY ==
+const int CINV_SIZE = 29;
+const int CINV_ROW_SIZE = 10;

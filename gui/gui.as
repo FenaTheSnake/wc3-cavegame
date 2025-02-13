@@ -1,6 +1,8 @@
 #include "menus\\worldcreation.as"
 #include "menus\\attention.as"
 #include "menus\\pausemenu.as"
+#include "hotbar.as"
+#include "creativeinventory.as"
 #include "debuginfo.as"
 
 namespace GUI {
@@ -31,6 +33,9 @@ namespace GUI {
         blockSelectionEffect = AddSpecialEffect("blockSelection.mdx", -9999, -9999);
 
         initialized = true;
+
+        Hotbar::Init();
+        CreativeInventory::Init();
     }
 
     void SetBlockSelectionPosition(World::BlockPos &in blockPos, Vector3 direction) {
@@ -69,6 +74,12 @@ namespace GUI {
     void OnESC() {
         if(GetTriggerPlayer() != GetLocalPlayer()) return;
         if(Main::isInGame) {
+            if(CreativeInventory::shown) {
+                CreativeInventory::Hide();
+                HookCursor();
+                return;
+            }
+
             if(Menus::PauseMenu::shown) {
                 Menus::PauseMenu::Hide();
                 HookCursor();
@@ -77,6 +88,28 @@ namespace GUI {
                 Menus::PauseMenu::Show();
                 UnhookCursor();
             }
+        }
+    }
+
+    void OnDigitsPressed() {
+        if(GetTriggerPlayer() != GetLocalPlayer()) return;
+
+        if(!Menus::PauseMenu::shown) {
+            if(CreativeInventory::shown && CreativeInventory::frameMouseOn != nil) CreativeInventory::OnDigitsPressed();
+            else Hotbar::OnDigitsPressed();
+        }
+    }
+
+    void OnInventoryButtonPressed() {
+        if(GetTriggerPlayer() != GetLocalPlayer()) return;
+        if(Menus::PauseMenu::shown) return;
+
+        if(!CreativeInventory::shown) {
+            CreativeInventory::Show();
+            UnhookCursor();
+        } else {
+            CreativeInventory::Hide();
+            HookCursor();
         }
     }
 }

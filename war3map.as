@@ -1,4 +1,4 @@
-#include "C:\\Games\\Warcraft III\\Maps\\my\\cavegame\\main.as"
+#include "scripts\\main.as"
 
 void main() {
     Main::Init();

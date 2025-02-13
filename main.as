@@ -1,13 +1,14 @@
 #include "blizzard.as"
 #include "constants.as"
 #include "logger.as"
+#include "math\\math.as"
 #include "memory\\memory.as"
 #include "world\\world.as"
 #include "collision\\collision.as"
 #include "fpp\\firstpersonplayer.as"
 #include "save\\worldsave.as"
 #include "save\\global.as"
-#include "mptest.as"
+#include "multiplayer\\multiplayer.as"
 #include "gui\\gui.as"
 #include "commands\\commands.as"
 
@@ -33,6 +34,8 @@ namespace Main {
     trigger trig_shift = nil;
     trigger trig_ctrl = nil;
     trigger trig_esc = nil;
+    trigger trig_digits = nil;
+    trigger trig_inv = nil;
     trigger trig_playerleft = nil;
 
 
@@ -99,6 +102,7 @@ namespace Main {
         Memory::Init();
         GUI::Init();
         GUI::HookCursor();
+        GUI::Hotbar::Show();
 
         @overworldSave = @save;
         @overworld.worldSave = @save;
@@ -123,15 +127,32 @@ namespace Main {
             trig_chatCommand = CreateTrigger();
             trig_jump = CreateTrigger();
             trig_esc = CreateTrigger();
+            trig_digits = CreateTrigger();
+            trig_inv = CreateTrigger();
             
             for(int i = 0; i < Multiplayer::players.length(); i++) { 
                 TriggerRegisterPlayerChatEvent(trig_chatCommand, Multiplayer::players[i], "/", false);
                 TriggerRegisterPlayerKeyEvent(trig_jump, Multiplayer::players[i], OSKEY_SPACE, 0, true);
                 TriggerRegisterPlayerKeyEvent(trig_esc, Multiplayer::players[i], OSKEY_ESCAPE, 0, true);
+
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_1, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_2, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_3, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_4, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_5, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_6, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_7, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_8, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_9, 0, true);
+                TriggerRegisterPlayerKeyEvent(trig_digits, Multiplayer::players[i], OSKEY_0, 0, true);
+
+                TriggerRegisterPlayerKeyEvent(trig_inv, Multiplayer::players[i], OSKEY_E, 0, true);
             }
             TriggerAddAction(trig_chatCommand, @HandleChatCommand);
             TriggerAddAction(trig_jump, @OnJumpPressed(player.OnJumpPressed));
             TriggerAddAction(trig_esc, @GUI::OnESC);
+            TriggerAddAction(trig_digits, @GUI::OnDigitsPressed);
+            TriggerAddAction(trig_inv, @GUI::OnInventoryButtonPressed);
         }
     }
 
@@ -158,9 +179,13 @@ namespace Main {
         DestroyTrigger(trig_chatCommand);
         DestroyTrigger(trig_jump);
         DestroyTrigger(trig_esc);
+        DestroyTrigger(trig_digits);
+        DestroyTrigger(trig_inv);
         trig_chatCommand = nil;
 
         GUI::UnhookCursor();
+        GUI::Hotbar::Hide();
+        GUI::CreativeInventory::Hide();
         if(Multiplayer::isHost) GUI::Menus::WorldCreation::Show();
         else GUI::Menus::Attention::AddAttention(ATTENTION_WAITING_FOR_HOST, ATTENTION_WAITING_FOR_HOST_TEXT);
     }

@@ -10,6 +10,8 @@ namespace GUI {
             framehandle sld_RenderDistance;
             framehandle txt_GenSpeed;
             framehandle sld_GenSpeed;
+
+            framehandle txt_hint;
             
             trigger onSettingsSliderValueChanged;
 
@@ -127,6 +129,10 @@ namespace GUI {
                 TriggerRegisterFrameEvent(onSettingsSliderValueChanged, sld_RenderDistance, FRAMEEVENT_SLIDER_VALUE_CHANGED);
                 TriggerRegisterFrameEvent(onSettingsSliderValueChanged, sld_GenSpeed, FRAMEEVENT_SLIDER_VALUE_CHANGED);
                 TriggerAddAction(onSettingsSliderValueChanged, @OnSettingsSlider);
+
+                txt_hint = CreateFrameByType("TEXT", "MenuHint", bck_Settings, "", 0);
+                SetFrameText(txt_hint, "|cffffcc00WASD - Move. LMB - Break block. RMB - Place block. (0-9) - Switch active HOTBAR slot.\nSpace - Jump. Double Space - Toggle Fly. E - Inventory. CTRL - Sprint. SHIFT - Sneak.\nF3 - Debug info.\nAnimated skybox by KINGGOLDrus (edited by me)|r");
+                SetFrameRelativePoint(txt_hint, FRAMEPOINT_TOP, bck_Settings, FRAMEPOINT_TOP, 0.0, 0.07);
 
                 Hide();
             }

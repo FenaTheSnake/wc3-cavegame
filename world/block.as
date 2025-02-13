@@ -6,7 +6,35 @@ namespace World {
         STONE,
         LOG,
         LEAVES,
-        CLOUD
+        CLOUD,
+
+        PLANKS_BIRCH,
+        PLANKS_JUNGLE,
+        PLANKS_OAK,
+        PLANKS_DARKOAK,
+        PLANKS_SPRUCE,
+
+        WOOL_WHITE,
+        WOOL_BLACK,
+        WOOL_RED,
+        WOOL_BLUE,
+        WOOL_LIME,
+        WOOL_MAGENTA,
+        WOOL_YELLOW,
+
+        GLASS,
+        GLASS_BLACK,
+        GLASS_RED,
+        GLASS_BLUE,
+        GLASS_LIME,
+        GLASS_MAGENTA,
+        GLASS_YELLOW,
+
+        LOG_OAK,
+        LOG_BIRCH,
+        LOG_SPRUCE,
+
+        BOOKSHELF
     }
 
     class BlockInfo {
@@ -22,13 +50,41 @@ namespace World {
     }
 
     const array<BlockInfo> blocksInfo = { 
-                                        BlockInfo(BlockID::AIR,     "Air",       "",                     true),
-                                        BlockInfo(BlockID::GRASS,   "Grass",     "grassBlock.blp",       false),
-                                        BlockInfo(BlockID::DIRT,    "Dirt",      "dirtBlock.blp",        false),
-                                        BlockInfo(BlockID::STONE,   "Stone",     "stoneBlock.blp",       false),
-                                        BlockInfo(BlockID::LOG,     "Log",       "logBlock.blp",         false),
-                                        BlockInfo(BlockID::LEAVES,  "Leaves",    "leavesBlock.blp",      false),
-                                        BlockInfo(BlockID::CLOUD,   "Cloud",     "cloudBlock.blp",       true),
+                                        BlockInfo(BlockID::AIR,             "Air",              "",                         true),
+                                        BlockInfo(BlockID::GRASS,           "Grass",            "grassBlock.blp",           false),
+                                        BlockInfo(BlockID::DIRT,            "Dirt",             "dirtBlock.blp",            false),
+                                        BlockInfo(BlockID::STONE,           "Stone",            "stoneBlock.blp",           false),
+                                        BlockInfo(BlockID::LOG,             "Log",              "logBlock.blp",             false),
+                                        BlockInfo(BlockID::LEAVES,          "Leaves",           "leavesBlock.blp",          false),
+                                        BlockInfo(BlockID::CLOUD,           "Cloud",            "cloudBlock.blp",           true),
+
+                                        BlockInfo(BlockID::PLANKS_BIRCH,    "Birch Planks",         "woodBirchBlock.blp",       false),
+                                        BlockInfo(BlockID::PLANKS_OAK,      "Oak Planks",           "woodOakBlock.blp",         false),
+                                        BlockInfo(BlockID::PLANKS_JUNGLE,    "Jungle Planks",       "woodJungleBlock.blp",       false),
+                                        BlockInfo(BlockID::PLANKS_SPRUCE,    "Spruce Planks",       "woodSpruceBlock.blp",       false),
+                                        BlockInfo(BlockID::PLANKS_DARKOAK,    "Dark Oak Planks",       "woodBigOakBlock.blp",       false),
+
+                                        BlockInfo(BlockID::LOG_BIRCH,    "Birch Log",       "logBirchBlock.blp",       false),
+                                        BlockInfo(BlockID::LOG_OAK,    "Oak Log",       "logOakBlock.blp",       false),
+                                        BlockInfo(BlockID::LOG_SPRUCE,    "Spruce Log",       "logSpruceBlock.blp",       false),
+
+                                        BlockInfo(BlockID::WOOL_WHITE,      "White Wool",       "woolWhiteBlock.blp",       false),
+                                        BlockInfo(BlockID::WOOL_BLACK,      "Black Wool",       "woolBlackBlock.blp",       false),
+                                        BlockInfo(BlockID::WOOL_RED,        "Red Wool",         "woolRedBlock.blp",       false),
+                                        BlockInfo(BlockID::WOOL_BLUE,       "Blue Wool",        "woolBlueBlock.blp",       false),
+                                        BlockInfo(BlockID::WOOL_LIME,       "Lime Wool",        "woolLimeBlock.blp",       false),
+                                        BlockInfo(BlockID::WOOL_MAGENTA,    "Magenta Wool",     "woolMagentaBlock.blp",       false),
+                                        BlockInfo(BlockID::WOOL_YELLOW,     "Yellow Wool",      "woolYellowBlock.blp",       false),
+
+                                        BlockInfo(BlockID::GLASS,           "Glass",            "glassBlock.blp",           true),
+                                        BlockInfo(BlockID::GLASS_BLACK,           "Black Glass",            "glassBlackBlock.blp",           true),
+                                        BlockInfo(BlockID::GLASS_RED,           "Red Glass",            "glassRedBlock.blp",           true),
+                                        BlockInfo(BlockID::GLASS_BLUE,           "Blue Glass",            "glassBlueBlock.blp",           true),
+                                        BlockInfo(BlockID::GLASS_LIME,           "LimeGlass",            "glassLimeBlock.blp",           true),
+                                        BlockInfo(BlockID::GLASS_MAGENTA,           "Magenta Glass",            "glassMagentaBlock.blp",           true),
+                                        BlockInfo(BlockID::GLASS_YELLOW,           "Yellow Glass",            "glassYellowBlock.blp",           true),
+
+                                        BlockInfo(BlockID::BOOKSHELF,     "Bookshelf",      "bookshelfBlock.blp",       false),
                                         };
     const int blocksAmount = blocksInfo.length();
 
@@ -71,7 +127,7 @@ namespace World {
     }
 
     string BlockID2Texture(BlockID id) {
-        if(id > blocksAmount || id < 0) return "dirtBlock.blp";
+        if(id >= blocksAmount || id < 0) return "dirtBlock.blp";
         return blocksInfo[id].texturePath;
 
         // if(id == BlockID::GRASS) return "grassBlock.blp";
@@ -84,12 +140,12 @@ namespace World {
     }
 
     string BlockID2Name(BlockID id) {
-        if(id > blocksAmount || id < 0) return "Unknown";
+        if(id >= blocksAmount || id < 0) return "Unknown";
         return blocksInfo[id].name;
     }
 
     bool BlockHasTransparency(BlockID id) {
-        if(id > blocksAmount || id < 0) return true;
+        if(id >= blocksAmount || id < 0) return true;
         return blocksInfo[id].transparent;
     }
 
